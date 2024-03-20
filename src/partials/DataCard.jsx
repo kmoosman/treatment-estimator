@@ -39,15 +39,15 @@ const DataQuad = ({ title, onInputChange }) => {
               
             </div>
 
-            <div className='w-1/2 mx-auto mt-5'>
-            <div className='grid grid-cols-10 gap-1'>
-                {treatment.events > 0 && Array.from({ length: treatment.events }).map((_, i) => (
-                    <div key={i} className='w-2 h-2 rounded-full bg-blue-500'></div>
-                ))}
-                {treatment.total - treatment.events > 0 && Array.from({ length: treatment.total - treatment.events }).map((_, i) => (
-                    <div key={i} className='w-2 h-2 rounded-full bg-gray-300'></div>
-                ))}
-            </div>
+            <div className='w- mx-auto mt-5'>
+                <div className='grid grid-flow-row auto-rows-max auto-cols-min gap-1' style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(10px, 1fr))' }}>
+                    {treatment.events > 0 && Array.from({ length: treatment.events }).map((_, i) => (
+                        <div key={i} className='w-2 h-2 rounded-full bg-blue-500'></div>
+                    ))}
+                    {treatment.total - treatment.events > 0 && Array.from({ length: treatment.total - treatment.events }).map((_, i) => (
+                        <div key={i} className='w-2 h-2 rounded-full bg-gray-300'></div>
+                    ))}
+                </div>
             </div>
 
             </div>
@@ -77,8 +77,8 @@ const DataQuad = ({ title, onInputChange }) => {
               
             </div>
 
-            <div className='w-1/2 mx-auto mt-5'>
-            <div className='grid grid-cols-10 gap-1'>
+            <div className='w- mx-auto mt-5'>
+                <div className='grid grid-flow-row auto-rows-max auto-cols-min gap-1' style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(10px, 1fr))' }}>
                 {control.events > 0 && Array.from({ length: control.events }).map((_, i) => (
                     <div key={i} className='w-2 h-2 rounded-full bg-blue-500'></div>
                 ))}
