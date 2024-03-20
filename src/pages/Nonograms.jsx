@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 
-import { nanograms } from "../utils/Data";
-import NanogramCard from "../partials/dashboard/NanogramCard"; 
+import { nonograms } from "../utils/Data";
+import NonogramCard from "../partials/dashboard/NonogramCard"; 
 import Header from "../partials/Header";
 import { cancerOptions } from "../utils/Data";
 
  
-export const Nanograms = () => {
+export const Nonograms = () => {
   const [selectedCancer, setSelectedCancer] = useState('kidney');
   return (
     <div className="flex h-screen overflow-hidden">
@@ -19,7 +19,7 @@ export const Nanograms = () => {
           <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
           <div className="flex flex-row gap-2 mt-12">   
             <div className="text-3xl font-bold text-slate-800 mb-7">
-              Nanograms 
+              Nonograms 
             </div>
             <select 
               className='border-2 h-10 border-gray-300 text-black rounded-md text-md font-semibold capitalize text-center'
@@ -34,11 +34,11 @@ export const Nanograms = () => {
 
               {selectedCancer === "kidney" ? (
           <div className="grid grid-cols-12 gap-6 mb-6 ">
-          {nanograms.sort((a, b) => a.id - b.id).map((nanogram) => (
-            <NanogramCard
+          {nonograms.sort((a, b) => a.id - b.id).map((nanogram) => (
+            <NonogramCard
               title={nanogram.name}
               blurb={nanogram.description}
-              type="nanogram"
+              type="nonogram"
               link={nanogram.link}
               key={nanogram.id}
               image={nanogram.image}
@@ -64,4 +64,4 @@ export const Nanograms = () => {
   );
 };
 
-export default Nanograms;
+export default Nonograms;

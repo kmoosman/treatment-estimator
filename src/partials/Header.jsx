@@ -7,11 +7,11 @@ function Header({}) {
 
   const routes = [
     "/",
-    "/nanograms",
+    "/nonograms",
     "/trials",
   ];
 
-  const standardRoutes = ["/", "/nanograms", "/trials/", "/nanograms/", "/trials"];
+  const standardRoutes = ["/", "/nonograms", "/trials/", "/nonograms/", "/trials"];
 
 
   return (
@@ -29,12 +29,12 @@ function Header({}) {
             </NavLink>
             
             <NavLink
-              to="/nanograms"
+              to="/nonograms"
               className={`${
-                pathname === "/nanograms" ? "text-black" : null
+                pathname === "/nonograms" ? "text-black" : null
               } ml-4 text-slate-500 hover:text-slate-600`}
             >
-              <div>Nanograms</div>
+              <div>Nonograms</div>
             </NavLink>
 
             <NavLink

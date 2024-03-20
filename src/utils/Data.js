@@ -99,7 +99,7 @@ export const cancerOptions = [
   "urethral",
 ];
 
-export const nanograms = [
+export const nonograms = [
   {
     id: 0,
     image: Fox,
