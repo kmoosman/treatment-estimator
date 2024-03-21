@@ -67,7 +67,7 @@ export const clearCellTrials = [
     year: "2022",
     name: "CHECKMATE-214",
     totalEnrolled: 139,
-    link: "https://www.nejm.org/doi/full/10.1056/NEJMoa2212851",
+    link: "https://pubmed.ncbi.nlm.nih.gov/36549781/",
     description:
       "Nivolumab plus Ipilimumab versus Sunitinib in first-line treatment of patients with advanced Sarcomatoid Renal Cell Carcinoma",
   },
