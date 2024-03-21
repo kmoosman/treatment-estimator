@@ -104,7 +104,6 @@ const Calculator = () => {
           >
             <option value="months">Months</option>
             <option value="years">Years</option>
-            {/* Add other units of time as necessary */}
           </select>
         </div>
 
