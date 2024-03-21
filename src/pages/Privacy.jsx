@@ -62,8 +62,6 @@ export const Privacy = () => {
         If you have any questions or concerns about this Privacy Policy or our
         practices, please contact us at contact@technessie.com.
       </p>
-
-
     </div>
   );
 };

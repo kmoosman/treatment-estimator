@@ -12,26 +12,24 @@ export const NanogramCard = ({ title, link, blurb, type, image }) => {
       href={link}
       target="_blank"
       className="flex flex-col col-span-full sm:col-span-4 xl:col-span-4 bg-white shadow-lg rounded-sm border border-slate-200"
-    
     >
       <div>
         <div className="px-5 pt-5">
           <header className="flex justify-between items-start mb-2">
             {/* Icon */}
-                <div
-                  className={`flex items-center justify-center w-20 h-20 rounded-lg  ${
-                    image
-                      ? ""
-                      : "bg-[radial-gradient(ellipse_at_right,_var(--tw-gradient-stops))] from-blue-200 to-blue-700 opacity-50 shadow-md"
-                  }`}
-                >
-                  <img
-                    src={image}
-                    alt=""
-                    className={`${image ? "rounded w-20" : "hidden"}`}
-                  />
-                </div>
-          
+            <div
+              className={`flex items-center justify-center w-20 h-20 rounded-lg  ${
+                image
+                  ? ""
+                  : "bg-[radial-gradient(ellipse_at_right,_var(--tw-gradient-stops))] from-blue-200 to-blue-700 opacity-50 shadow-md"
+              }`}
+            >
+              <img
+                src={image}
+                alt=""
+                className={`${image ? "rounded w-20" : "hidden"}`}
+              />
+            </div>
           </header>
           <h2 className="text-xl max-h-14 overflow-scroll font-semibold text-slate-800 mb-2 mt-4">
             {title}

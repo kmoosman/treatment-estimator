@@ -61,6 +61,16 @@ export const clearCellTrials = [
     description:
       "Cabozantinib plus Nivolumab and Ipilimumab in Renal-Cell Carcinoma",
   },
+  {
+    id: "7",
+    image: null,
+    year: "2022",
+    name: "CHECKMATE-214",
+    totalEnrolled: 139,
+    link: "https://www.nejm.org/doi/full/10.1056/NEJMoa2212851",
+    description:
+      "Nivolumab plus Ipilimumab versus Sunitinib in first-line treatment of patients with advanced Sarcomatoid Renal Cell Carcinoma",
+  },
 ];
 
 export const nonClearCellTrials = [
@@ -71,8 +81,7 @@ export const nonClearCellTrials = [
     year: "2023",
     totalEnrolled: 147,
     link: "https://ascopubs.org/doi/10.1200/JCO.2023.41.16_suppl.4562",
-    description:
-      "Cabozantinib vs. Sunitinib in Advanced pRCC",
+    description: "Cabozantinib vs. Sunitinib in Advanced pRCC",
   },
   {
     id: "1",
@@ -83,8 +92,7 @@ export const nonClearCellTrials = [
     link: "https://pubmed.ncbi.nlm.nih.gov/26626617/",
     description:
       "Everolimus Versus Sunitinib Prospective Evaluation in Metastatic Non-Clear Cell Renal Cell Carcinoma",
-  }
-
+  },
 ];
 
 export const cancerOptions = [

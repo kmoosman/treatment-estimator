@@ -33,4 +33,3 @@ export const formatPercent = (value) =>
   Intl.NumberFormat("en-US", {
     style: "percent",
   }).format(value);
-
