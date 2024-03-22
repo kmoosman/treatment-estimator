@@ -130,7 +130,7 @@ const Calculator = () => {
 
       <hr className="my-4" />
       <div className="grid grid-cols-1 lg:grid-cols-7 gap-4 bg-slate-600 rounded text-white p-4">
-        <div className="flex flex-row gap-2 items-center col-span-1">
+        <div className="flex flex-col lg:flex-row gap-2 items-center col-span-1">
           <label className="text-md font-semibold">Units:</label>
           <select
             className="border-2 border-gray-300 text-black rounded-md text-center"
@@ -142,7 +142,7 @@ const Calculator = () => {
           </select>
         </div>
 
-        <div className="relative flex flex-row gap-2 group col-span-1">
+        <div className="flex flex-col lg:flex-row gap-2 items-center col-span-1">
           <label className="self-center text-md font-semibold">Time (t):</label>
           {/* on hover display this tooltop */}
           <div className="absolute bottom-0 flex-col items-center hidden mb-12 group-hover:flex">
@@ -151,15 +151,15 @@ const Calculator = () => {
             </span>
           </div>
           <input
-            className="border-2 text-black  border-gray-300 rounded-md p-2 w-20 text-center"
+            className="border-2 text-black border-gray-300 rounded-md p-2 w-20 text-center"
             type="number"
             value={time}
             min={0}
             onChange={(e) => setTime(e.target.valueAsNumber)}
           />
         </div>
-        <div className="relative flex flex-row gap-2 group col-span-3">
-          <label className="self-center font-semibold">
+        <div className="relative flex lg:flex-row flex-col gap-2 group items-center col-span-1 lg:col-span-3">
+          <label className="self-center font-semibold text-center">
             Milestone Probability at Time (t) with Control Therapy (%):
           </label>
           {/* on hover display this tooltop */}
@@ -178,8 +178,8 @@ const Calculator = () => {
           />
         </div>
 
-        <div className="relative flex flex-row gap-2 group col-span-2">
-          <label className="self-center font-semibold">
+        <div className="relative flex lg:flex-row flex-col gap-2 group col-span-1 items-center lg:col-span-2">
+          <label className="self-center font-semibold text-center">
             Hazard Ratio (HR) Point Estimate:
           </label>
           {/* on hover display this tooltop */}
@@ -197,9 +197,9 @@ const Calculator = () => {
             onChange={(e) => handleInputChange(setHazardRatio)(e)}
           />
         </div>
-        <div className="flex flex-row col-span-7 mr-12 gap-2 justify-end">
-          <div className="relative flex flex-row gap-2 group">
-            <label className="self-center text-sm align-right font-semibold">
+        <div className="flex flex-row col-span-1 lg:col-span-7 lg:mr-8 2xl:mr-12 justify-center gap-2 items-center lg:justify-end">
+          <div className="relative flex lg:flex-row flex-col gap-2 group items-center">
+            <label className="self-center text-sm lg:align-right font-semibold text-center w-full">
               Confidence Interval (CI):
             </label>
             {/* on hover display this tooltop */}
