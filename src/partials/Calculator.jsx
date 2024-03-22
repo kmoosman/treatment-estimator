@@ -34,13 +34,20 @@ const Calculator = () => {
     const calculateResults = () => {
       if (time > 0 && milestoneProbability > 0 && hazardRatio > 0) {
         const lnValue = Math.log(1 / (milestoneProbability / 100));
-        const calculatedValue =
-          (1 / Math.exp((lnValue / time) * hazardRatio * time)) * 100;
+        const calculatedValue = Math.min(
+          (1 / Math.exp((lnValue / time) * hazardRatio * time)) * 100,
+          100
+        );
+
         // calculate based on lowerHazardRatio and upperHazardRatio for bounds of CI
-        const lowerCIValue =
-          (1 / Math.exp((lnValue / time) * lowerHazardRatio * time)) * 100;
-        const upperCIValue =
-          (1 / Math.exp((lnValue / time) * upperHazardRatio * time)) * 100;
+        const lowerCIValue = Math.min(
+          (1 / Math.exp((lnValue / time) * lowerHazardRatio * time)) * 100,
+          100
+        );
+        const upperCIValue = Math.min(
+          (1 / Math.exp((lnValue / time) * upperHazardRatio * time)) * 100,
+          100
+        );
         const medianSurvivalValue = Math.log(2) / (lnValue / time);
 
         const meanSurvivalValue = 1.44 * medianSurvivalValue;
@@ -86,6 +93,34 @@ const Calculator = () => {
     lowerHazardRatio,
     upperHazardRatio,
   ]);
+
+  const handleInputChange = (setValue) => (e) => {
+    const inputValue = e.target.value;
+    if (inputValue === "" || inputValue === "-") {
+      setValue("");
+    } else {
+      const value = Number(inputValue);
+      if (value >= 0) {
+        setValue(value);
+      }
+    }
+  };
+
+  const handleChangeLimitTo100 = (setValue) => (e) => {
+    const inputValue = e.target.value;
+    if (inputValue === "" || inputValue === "-") {
+      setValue("");
+    } else {
+      const value = Number(inputValue);
+      if (value > 100) {
+        setValue(100);
+      } else if (value < 0) {
+        setValue(0);
+      } else {
+        setValue(value);
+      }
+    }
+  };
 
   return (
     <div>
@@ -137,8 +172,9 @@ const Calculator = () => {
             className="border-2 text-black  border-gray-300 rounded-md p-2 w-20 text-center"
             type="number"
             min={0}
+            max={100}
             value={milestoneProbability}
-            onChange={(e) => setMilestoneProbability(e.target.valueAsNumber)}
+            onChange={handleChangeLimitTo100(setMilestoneProbability)}
           />
         </div>
 
@@ -154,9 +190,11 @@ const Calculator = () => {
           </div>
           <input
             type="number"
+            min="0"
+            step="0.01"
             className="border-2 border-gray-300 text-black  rounded-md p-2 w-20 text-center"
             value={hazardRatio}
-            onChange={(e) => setHazardRatio(e.target.valueAsNumber)}
+            onChange={(e) => handleInputChange(setHazardRatio)(e)}
           />
         </div>
         <div className="flex flex-row col-span-7 mr-12 gap-2 justify-end">
@@ -174,13 +212,17 @@ const Calculator = () => {
               type="number"
               className="border-2 border-gray-300 text-black h-6 text-sm rounded-md p-2 w-20 text-center"
               value={lowerHazardRatio}
-              onChange={(e) => setLowerHazardRatio(e.target.valueAsNumber)}
+              min="0"
+              step="0.01"
+              onChange={(e) => handleInputChange(setLowerHazardRatio)(e)}
             />
             <input
               type="number"
+              min="0"
+              step="0.01"
               className="border-2 border-gray-300 text-black h-6 text-sm rounded-md p-2 w-20 text-center"
               value={upperHazardRatio}
-              onChange={(e) => setUpperHazardRatio(e.target.valueAsNumber)}
+              onChange={(e) => handleInputChange(setUpperHazardRatio)(e)}
             />
           </div>
         </div>
