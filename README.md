@@ -34,6 +34,6 @@ We are shipping this templates with a very basic React configuration to let you 
 
 ## Terms and License
 
-- Released under the [MIT](https://opensource.org/license/mit).
+- Released under a [MIT License](https://opensource.org/license/mit).
 - We do not guarantee the accuracy or completeness of any code or content, and you are using this repo and tools at your own discretion and risk. No warranty, express or implied, is provided, and we disclaim all implied warranties. 
 
