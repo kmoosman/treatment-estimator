@@ -25,7 +25,7 @@ npm run build
 
 ### Deployment 
 
-This live demo if this application is deployed using [AWS Amplify](https://aws.amazon.com/amplify/) which can be a quick and easy solution for deploying frontend only applications such as this. They also offer a generous free tier for new users.
+The live demo if this application is deployed using [AWS Amplify](https://aws.amazon.com/amplify/) which can be a quick solution for deploying frontend only applications. They also offer a generous free tier for new users.
 
 ### Support notes 
 
