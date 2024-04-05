@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import * as Math from "mathjs";
+import CaseEstimator from "./CaseEstimator";
 
 const Calculator = () => {
   const [survivalUnit, setSurvivalUnit] = useState("months");

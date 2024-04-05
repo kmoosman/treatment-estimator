@@ -33,3 +33,11 @@ export const formatPercent = (value) =>
   Intl.NumberFormat("en-US", {
     style: "percent",
   }).format(value);
+
+export const formatNumber = (value) => {
+  const roundedValue = Math.round(value);
+  return Intl.NumberFormat("en-US", {
+    style: "decimal",
+    maximumFractionDigits: 0,
+  }).format(roundedValue);
+};
