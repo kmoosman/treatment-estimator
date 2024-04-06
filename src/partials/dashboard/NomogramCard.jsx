@@ -4,7 +4,7 @@ import React from "react";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { fab } from "@fortawesome/free-brands-svg-icons";
 
-export const NanogramCard = ({ title, link, blurb, type, image }) => {
+export const nomogramCard = ({ title, link, blurb, type, image }) => {
   library.add(fab);
 
   return (
@@ -49,4 +49,4 @@ export const NanogramCard = ({ title, link, blurb, type, image }) => {
   );
 };
 
-export default NanogramCard;
+export default nomogramCard;

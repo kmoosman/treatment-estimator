@@ -40,14 +40,14 @@ export const Nomograms = () => {
               <div className="grid grid-cols-12 gap-6 mb-6 ">
                 {nomograms
                   .sort((a, b) => a.id - b.id)
-                  .map((nanogram) => (
+                  .map((nomogram) => (
                     <NomogramCard
-                      title={nanogram.name}
-                      blurb={nanogram.description}
+                      title={nomogram.name}
+                      blurb={nomogram.description}
                       type="nomogram"
-                      link={nanogram.link}
-                      key={nanogram.id}
-                      image={nanogram.image}
+                      link={nomogram.link}
+                      key={nomogram.id}
+                      image={nomogram.image}
                     />
                   ))}
               </div>
