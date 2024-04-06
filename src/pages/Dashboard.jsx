@@ -30,7 +30,7 @@ export const Dashboard = ({ type }) => {
       calculator: "Case Estimator",
       highlightTitle: `${new Date().getFullYear()} Estimated New Cancer Cases from American Cancer Society`,
       highlightSubtext:
-        "Search by cancer type, locate the case counts to use as your reference range and estimate the cases by subgroup below",
+        "Search by cancer type, locate the case counts to use as your reference range to estimate the cases by subgroup below",
       highlightLink:
         "https://cancerstatisticscenter.cancer.org/?_ga=2.74990034.1963401142.1712297613-345829780.1712297613&_gl=1*lvi03j*_ga*MzQ1ODI5NzgwLjE3MTIyOTc2MTM.*_ga_12CJLLFFQT*MTcxMjI5NzYxMi4xLjEuMTcxMjI5NzYyNS40Ny4wLjA.#/",
     },

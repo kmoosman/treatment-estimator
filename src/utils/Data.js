@@ -107,7 +107,7 @@ export const cancerOptions = [
   "urethral",
 ];
 
-export const nonograms = [
+export const nomograms = [
   {
     id: 0,
     image: Fox,

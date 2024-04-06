@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 
-import { nonograms } from "../utils/Data";
-import NonogramCard from "../partials/dashboard/NonogramCard";
+import { nomograms } from "../utils/Data";
+import NomogramCard from "../partials/dashboard/NomogramCard";
 import Header from "../partials/Header";
 import { cancerOptions } from "../utils/Data";
 
-export const Nonograms = () => {
+export const Nomograms = () => {
   const [selectedCancer, setSelectedCancer] = useState("kidney");
   return (
     <div className="flex h-screen overflow-hidden">
@@ -18,7 +18,7 @@ export const Nonograms = () => {
           <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
             <div className="flex flex-row gap-2 mt-12">
               <div className="text-3xl font-bold text-slate-800 mb-7">
-                Nonograms
+                Nomograms
               </div>
               <select
                 className="border-2 h-10 border-gray-300 text-black rounded-md text-md font-semibold capitalize text-center"
@@ -38,13 +38,13 @@ export const Nonograms = () => {
 
             {selectedCancer === "kidney" ? (
               <div className="grid grid-cols-12 gap-6 mb-6 ">
-                {nonograms
+                {nomograms
                   .sort((a, b) => a.id - b.id)
                   .map((nanogram) => (
-                    <NonogramCard
+                    <NomogramCard
                       title={nanogram.name}
                       blurb={nanogram.description}
-                      type="nonogram"
+                      type="nomogram"
                       link={nanogram.link}
                       key={nanogram.id}
                       image={nanogram.image}
@@ -54,7 +54,7 @@ export const Nonograms = () => {
             ) : (
               //todo: This will need to be revised when more trials are entered
               <div className="text-3xl font-bold text-slate-500 mt-10 border p-10 shadow-md ">
-                No nanograms entered for {selectedCancer} cancer
+                No nomograms entered for {selectedCancer} cancer
               </div>
             )}
           </div>
@@ -64,4 +64,4 @@ export const Nonograms = () => {
   );
 };
 
-export default Nonograms;
+export default Nomograms;

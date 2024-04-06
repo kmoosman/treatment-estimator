@@ -5,13 +5,13 @@ function Header({}) {
   const location = useLocation();
   const { pathname } = location;
 
-  const routes = ["/", "/nonograms", "/trials"];
+  const routes = ["/", "/nomograms", "/trials"];
 
   const standardRoutes = [
     "/",
-    "/nonograms",
+    "/nomograms",
     "/trials/",
-    "/nonograms/",
+    "/nomograms/",
     "/trials",
   ];
 
@@ -30,12 +30,12 @@ function Header({}) {
             </NavLink>
 
             <NavLink
-              to="/nonograms"
+              to="/nomograms"
               className={`${
-                pathname === "/nonograms" ? "text-black" : null
+                pathname === "/nomograms" ? "text-black" : null
               } ml-4 text-slate-500 hover:text-slate-600`}
             >
-              <div>Nonograms</div>
+              <div>Nomograms</div>
             </NavLink>
 
             <NavLink
@@ -47,7 +47,7 @@ function Header({}) {
               } ml-4 text-slate-500 hover:text-slate-600`}
             >
               <div className="flex flex-row gap-1">
-                <span className="hidden lg:block">Clincial</span>Trials
+                <span className="hidden lg:block">Clinical</span>Trials
               </div>
             </NavLink>
 

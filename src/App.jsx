@@ -8,7 +8,7 @@ import "./charts/ChartjsConfig";
 // Import pages
 import Dashboard from "./pages/Dashboard";
 import Trials from "./pages/Trials";
-import Nonograms from "./pages/Nonograms";
+import Nomograms from "./pages/Nomograms";
 import Privacy from "./pages/Privacy";
 import Visual from "./pages/Visual";
 
@@ -31,8 +31,8 @@ function App() {
         />
         <Route
           exact
-          path="/nonograms"
-          element={<Nonograms type="nonograms" />}
+          path="/nomograms"
+          element={<Nomograms type="nomograms" />}
         />
         <Route exact path="/trials" element={<Trials type="trials" />} />
         <Route
