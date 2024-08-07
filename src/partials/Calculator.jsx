@@ -15,8 +15,8 @@ const Calculator = () => {
       const lnValue = Math.log(1 / (milestoneProbability / 100));
       const calculatedValue = Math.min((1 / Math.exp((lnValue / time) * hazardRatio * time)) * 100, 100);
 
-      const lowerCIValue = lowerHazardRatio ? Math.min((1 / Math.exp((lnValue / time) * lowerHazardRatio * time)) * 100, 100) : null;
-      const upperCIValue = upperHazardRatio ? Math.min((1 / Math.exp((lnValue / time) * upperHazardRatio * time)) * 100, 100) : null;
+      const lowerCIValue = lowerHazardRatio !== "" ? Math.min((1 / Math.exp((lnValue / time) * lowerHazardRatio * time)) * 100, 100) : null;
+      const upperCIValue = upperHazardRatio !== "" ? Math.min((1 / Math.exp((lnValue / time) * upperHazardRatio * time)) * 100, 100) : null;
       const medianSurvivalValue = Math.log(2) / (lnValue / time);
       const meanSurvivalValue = 1.44 * medianSurvivalValue;
 
@@ -29,8 +29,8 @@ const Calculator = () => {
       const medianSurvivalWithTreatmentValue = survivalWithTreatment(hazardRatio).median;
       const meanSurvivalWithTreatmentValue = survivalWithTreatment(hazardRatio).mean;
 
-      const lowerSurvivalWithTreatment = lowerHazardRatio ? survivalWithTreatment(lowerHazardRatio) : null;
-      const upperSurvivalWithTreatment = upperHazardRatio ? survivalWithTreatment(upperHazardRatio) : null;
+      const lowerSurvivalWithTreatment = lowerHazardRatio !== "" ? survivalWithTreatment(lowerHazardRatio) : null;
+      const upperSurvivalWithTreatment = upperHazardRatio !== "" ? survivalWithTreatment(upperHazardRatio) : null;
 
       return {
         result: calculatedValue,
@@ -40,10 +40,10 @@ const Calculator = () => {
         meanSurvival: meanSurvivalValue,
         medianSurvivalWithTreatment: medianSurvivalWithTreatmentValue,
         meanSurvivalWithTreatment: meanSurvivalWithTreatmentValue,
-        lowerMedianSurvivalWithTreatment: lowerSurvivalWithTreatment?.median,
-        lowerMeanSurvivalWithTreatment: lowerSurvivalWithTreatment?.mean,
-        upperMedianSurvivalWithTreatment: upperSurvivalWithTreatment?.median,
-        upperMeanSurvivalWithTreatment: upperSurvivalWithTreatment?.mean,
+        lowerMedianSurvivalWithTreatment: lowerSurvivalWithTreatment ? lowerSurvivalWithTreatment.median : null,
+        lowerMeanSurvivalWithTreatment: lowerSurvivalWithTreatment ? lowerSurvivalWithTreatment.mean : null,
+        upperMedianSurvivalWithTreatment: upperSurvivalWithTreatment ? upperSurvivalWithTreatment.median : null,
+        upperMeanSurvivalWithTreatment: upperSurvivalWithTreatment ? upperSurvivalWithTreatment.mean : null,
       };
     }
     return null;
@@ -155,10 +155,7 @@ const Calculator = () => {
               onChange={handleInputChange(setUpperHazardRatio)}
             />
           </div>
-
         </div>
-
-
       </div>
       <div className="col-span-7 flex justify-end">
         <button
@@ -168,8 +165,6 @@ const Calculator = () => {
           Add Result
         </button>
       </div>
-
-
 
       {results.map((result, index) => (
         <div key={index} className="p-4 mt-4 bg-white pb-10 shadow-lg rounded">
