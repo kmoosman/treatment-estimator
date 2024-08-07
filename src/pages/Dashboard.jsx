@@ -9,6 +9,8 @@ import Calculator from "../partials/Calculator";
 import DataCard from "../partials/DataCard";
 import CaseEstimator from "../partials/CaseEstimator";
 import Modal from "../partials/Modal";
+import Explorer from "../partials/Explorer";
+
 
 export const Dashboard = ({ type }) => {
   const [isModalOpen, setIsModalOpen] = useState(true);
@@ -33,6 +35,14 @@ export const Dashboard = ({ type }) => {
         "Search by cancer type, locate the case counts to use as your reference range to estimate the cases by subgroup below",
       highlightLink:
         "https://cancerstatisticscenter.cancer.org/?_ga=2.74990034.1963401142.1712297613-345829780.1712297613&_gl=1*lvi03j*_ga*MzQ1ODI5NzgwLjE3MTIyOTc2MTM.*_ga_12CJLLFFQT*MTcxMjI5NzYxMi4xLjEuMTcxMjI5NzYyNS40Ny4wLjA.#/",
+    },
+    {
+      calculator: "Explorer (beta)",
+      highlightTitle:
+        "Data Explorer for CSV",
+      highlightSubtext:
+        "For a quick look at the data upload a CSV file and explore the data. This tool is intended for educational purposes only.",
+      highlightLink: null,
     },
   ];
   const [selectedCalculator, setSelectedCalculator] = useState(
@@ -166,11 +176,21 @@ export const Dashboard = ({ type }) => {
                   </div>
                 </div>
               </a>
+              {selectedCalculator.calculator === "Explorer (beta)" && (
+                <div
+                  className="text-xs font-md pt-2"
+                >
+                  <div>
+                    This tool is meant to drive curiosity and exploration of small and simple datasets. Full statistical analysis should be done with the original data and statistical software. Be mindful of methods and assumptions when working with combined datasets.
+
+                  </div>
+                </div>
+              )}
               {selectedCalculator.calculator === "Probability" && (
                 <a
                   href="https://www.mdpi.com/article/10.3390/cancers14163923/s1"
                   target="_blank"
-                  className="text-xs font-md p-2"
+                  className="text-xs font-md pt-2"
                 >
                   Formulas behind this calculator are based on the above
                   publication and are intended for educational purposes only.
@@ -180,7 +200,9 @@ export const Dashboard = ({ type }) => {
               )}
 
               <div className="mt-7">
-                {selectedCalculator.calculator === "Probability" ? (
+                {selectedCalculator.calculator === "Explorer (beta)" ? (
+                  <Explorer />
+                ) : selectedCalculator.calculator === "Probability" ? (
                   <Calculator />
                 ) : (
                   <CaseEstimator />
