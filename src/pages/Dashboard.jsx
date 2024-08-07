@@ -41,7 +41,7 @@ export const Dashboard = ({ type }) => {
       highlightTitle:
         "Data Explorer for CSV",
       highlightSubtext:
-        "For a quick look at the data upload a CSV file and explore the data. This tool is intended for educational purposes only.",
+        "To quickly explore small datasets, upload a CSV file and use the filters below. This tool is intended for educational purposes only.",
       highlightLink: null,
     },
   ];
