@@ -275,6 +275,23 @@ const Explorer = () => {
     setReactTableGlobalFilter(value);
   };
 
+
+  const exportFilteredData = () => {
+    const filteredData = rows.map(row => row.values);
+    const visibleColumns = columns.filter(col => selectedColumns.includes(col.accessor));
+    const csv = [
+      visibleColumns.map(col => col.Header).join(','),
+      ...filteredData.map(row => visibleColumns.map(col => row[col.accessor]).join(','))
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'filtered_data.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   const getOperatorOptions = (columnId) => {
     const column = columns.find(col => col.accessor === columnId);
     if (!column) return [];
@@ -524,22 +541,7 @@ const Explorer = () => {
 
         <div className="w-full flex justify-end">
           <button
-            onClick={() => {
-              const filteredData = rows.map(row => row.values);
-              const visibleColumns = columns.filter(col => selectedColumns.includes(col.accessor));
-              const csv = [
-                visibleColumns.map(col => col.Header).join(','),
-                ...filteredData.map(row => visibleColumns.map(col => row[col.accessor]).join(','))
-              ].join('\n');
-              const blob = new Blob([csv], { type: 'text/csv' });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = 'filtered_data.csv';
-              a.click();
-              URL.revokeObjectURL(url);
-            }
-            }
+            onClick={() => exportFilteredData()}
             className="text-blue-500 text-xs rounded text-medium hover:text-blue-600 flex justify-end"
           >
             Export Filtered Data
