@@ -199,21 +199,6 @@ const Explorer = () => {
     gotoPage(0);
   }, [filters, globalFilter, setAllFilters, setReactTableGlobalFilter, gotoPage]);
 
-  useEffect(() => {
-    const filtersToApply = filters
-      .filter(f => f.column && f.operator && f.value)
-      .map(filter => ({
-        id: filter.column,
-        value: {
-          operator: filter.operator,
-          value: filter.value,
-          value2: filter.value2
-        }
-      }));
-    setAllFilters(filtersToApply);
-  }, [filters, setAllFilters]);
-
-
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -289,6 +274,23 @@ const Explorer = () => {
     setGlobalFilter(value);
     setReactTableGlobalFilter(value);
   };
+
+
+  const exportFilteredData = () => {
+    const filteredData = rows.map(row => row.values);
+    const visibleColumns = columns.filter(col => selectedColumns.includes(col.accessor));
+    const csv = [
+      visibleColumns.map(col => col.Header).join(','),
+      ...filteredData.map(row => visibleColumns.map(col => row[col.accessor]).join(','))
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'filtered_data.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   const getOperatorOptions = (columnId) => {
     const column = columns.find(col => col.accessor === columnId);
@@ -520,7 +522,7 @@ const Explorer = () => {
 
       </div>
 
-      <div className="mb-4 flex flex-wrap mt-2">
+      <div className="mb-2 flex flex-wrap mt-2">
         {globalFilter && (
           <span className="mr-2 mb-2 px-3 py-1 bg-gray-200 rounded-full text-sm">
             All fields: {globalFilter}
@@ -535,8 +537,18 @@ const Explorer = () => {
             </button>
           </span>
         )}
+
+
+        <div className="w-full flex justify-end">
+          <button
+            onClick={() => exportFilteredData()}
+            className="text-blue-500 text-xs rounded text-medium hover:text-blue-600 flex justify-end"
+          >
+            Export Filtered Data
+          </button>
+        </div>
         {tableFilters.map((filter, index) => (
-          <span key={index} className="mr-2 mb-2 px-3 py-1 bg-gray-200 rounded-full text-sm">
+          <span key={index} className="mr-2 px-3 py-1 bg-gray-200 rounded-full text-sm">
             {columns.find(col => col.accessor === filter.id).Header}
             {filter.value.operator} {filter.value.value}
             {filter.value.operator === OPERATORS.between && ` and ${filter.value.value2}`}
@@ -548,6 +560,7 @@ const Explorer = () => {
             </button>
           </span>
         ))}
+
       </div>
       {
         data.length > 0 ? (
