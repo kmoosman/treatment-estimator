@@ -113,7 +113,12 @@ export const Dashboard = ({ type }) => {
                     discretion and risk. No warranty, express or implied, is
                     provided, and we disclaim all implied warranties. The entire
                     risk regarding the quality, accuracy, and performance of
-                    these tools rests with the user. The developers or
+                    these tools rests with the user. Please note that some features
+                    of this platform may use local storage on your device to store
+                    configurations and user preferences. This information is stored
+                    locally on your device and is not transmitted to our servers.
+                    By using this platform, you consent to the use of local storage
+                    for these purposes. The developers or
                     contributors to this platform are not liable for any direct,
                     indirect, incidental, or consequential damages, including
                     but not limited to loss of profits, data, or any other
