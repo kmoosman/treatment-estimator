@@ -1,17 +1,21 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useTable, useFilters, useGlobalFilter, useSortBy, usePagination } from 'react-table';
 import Select, { components } from 'react-select';
 import { faChevronDown, faChevronUp, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import toast from 'react-hot-toast';
+import Chart from 'chart.js/auto';
 
 
 const OPERATORS = {
-  equals: '=',
+  equals: 'equals',
+  not_equals: 'not_equals',
   contains: 'contains',
-  greaterThan: '>',
-  lessThan: '<',
-  between: 'between'
+  not_contains: 'not_contains',
+  greater_than: 'greater_than',
+  less_than: 'less_than',
+  between: 'between',
+  not_between: 'not_between'
 };
 
 const LOGIC_OPERATORS = {
@@ -27,11 +31,16 @@ const Explorer = () => {
   const [data, setData] = useState([]);
   const [filters, setFilters] = useState([]);
   const [columns, setColumns] = useState([]);
+  const [showChart, setShowChart] = useState(false);
   const [globalFilter, setGlobalFilter] = useState('');
   const [debugInfo, setDebugInfo] = useState('');
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [selectedColumns, setSelectedColumns] = useState([]);
+  const [selectedChartColumn1, setSelectedChartColumn1] = useState('');
+  const [selectedChartColumn2, setSelectedChartColumn2] = useState('');
+  const chartRef1 = useRef(null);
+  const chartRef2 = useRef(null);
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -63,31 +72,46 @@ const Explorer = () => {
           const rowValue = row.values[id];
           if (rowValue === undefined) return true;
 
-          switch (filterValue.operator) {
-            case OPERATORS.equals:
-              return String(rowValue).toLowerCase() === String(filterValue.value).toLowerCase();
-            case OPERATORS.contains:
-              return String(rowValue).toLowerCase().includes(String(filterValue.value).toLowerCase());
+          const { operator, value } = filterValue;
+          const stringRowValue = String(rowValue).toLowerCase();
+          const stringFilterValue = String(value).toLowerCase();
+
+          switch (operator) {
+            case 'equals':
+              return stringRowValue === stringFilterValue;
+            case 'not_equals':
+              return stringRowValue !== stringFilterValue;
+            case 'contains':
+              return stringRowValue.includes(stringFilterValue);
+            case 'not_contains':
+              return !stringRowValue.includes(stringFilterValue);
             default:
               return true;
           }
         });
       },
       number: (rows, id, filterValue) => {
-        const { operator, value, value2 } = filterValue;
         return rows.filter(row => {
           const rowValue = parseFloat(row.values[id]);
           if (isNaN(rowValue)) return true;
 
+          const { operator, value, value2 } = filterValue;
+          const numericValue = parseFloat(value);
+          const numericValue2 = parseFloat(value2);
+
           switch (operator) {
-            case OPERATORS.equals:
-              return rowValue === parseFloat(value);
-            case OPERATORS.greaterThan:
-              return rowValue > parseFloat(value);
-            case OPERATORS.lessThan:
-              return rowValue < parseFloat(value);
-            case OPERATORS.between:
-              return rowValue >= parseFloat(value) && rowValue <= parseFloat(value2);
+            case 'equals':
+              return rowValue === numericValue;
+            case 'not_equals':
+              return rowValue !== numericValue;
+            case 'greater_than':
+              return rowValue > numericValue;
+            case 'less_than':
+              return rowValue < numericValue;
+            case 'between':
+              return rowValue >= numericValue && rowValue <= numericValue2;
+            case 'not_between':
+              return rowValue < numericValue || rowValue > numericValue2;
             default:
               return true;
           }
@@ -101,6 +125,8 @@ const Explorer = () => {
     const savedConfigs = JSON.parse(localStorage.getItem('savedFilterConfigs') || '[]');
     setSavedConfigs(savedConfigs);
   }, []);
+
+
 
   const saveCurrentConfig = () => {
     if (configName) {
@@ -191,7 +217,8 @@ const Explorer = () => {
         value: {
           operator: filter.operator,
           value: filter.value,
-          value2: filter.value2
+          value2: filter.value2,
+          isNot: filter.isNot
         }
       }));
     setAllFilters(filtersToApply);
@@ -231,6 +258,11 @@ const Explorer = () => {
 
             setColumns(newColumns);
             setSelectedColumns(newColumns.map(col => col.accessor));
+            if (newColumns.length > 0) {
+              setSelectedChartColumn1(newColumns[0].accessor);
+              setSelectedChartColumn2(newColumns[0].accessor);
+            }
+
             setIsProcessing(false);
             setDebugInfo(`File loaded successfully. ${e.data.data.length} rows.`);
           } else if (e.data.type === 'error') {
@@ -254,15 +286,125 @@ const Explorer = () => {
     }
   };
 
+  useEffect(() => {
+    return () => {
+      if (chartRef1.current) {
+        chartRef1.current.destroy();
+      }
+      if (chartRef2.current) {
+        chartRef2.current.destroy();
+      }
+    };
+  }, []);
+
+  const prepareAndRenderChart = (column, chartRef, chartId) => {
+    if (!column || !rows.length) return;
+
+    const aggregatedData = rows.reduce((acc, row) => {
+      const value = row.values[column];
+      if (acc[value]) {
+        acc[value]++;
+      } else {
+        acc[value] = 1;
+      }
+      return acc;
+    }, {});
+
+
+    const totalCount = Object.values(aggregatedData).reduce((sum, count) => sum + count, 0);
+    const chartData = Object.entries(aggregatedData).map(([key, value]) => ({
+      label: key,
+      count: value,
+      percentage: (value / totalCount) * 100
+    }));
+
+    chartData.sort((a, b) => a.count - b.count);
+
+    if (chartRef.current) {
+      chartRef.current.destroy();
+    }
+
+    const ctx = document.getElementById(chartId).getContext('2d');
+    chartRef.current = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: chartData.map(item => item.label),
+        datasets: [{
+          label: `${column} Distribution`,
+          data: chartData.map(item => item.count),
+          backgroundColor: 'rgba(75, 192, 192, 0.6)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Count'
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                const data = chartData[context.dataIndex];
+                const count = data.count;
+                const percentage = data.percentage.toFixed(2);
+                return `Count: ${count} (${percentage}%)`;
+              }
+            }
+          },
+          datalabels: {
+            anchor: 'end',
+            align: 'top',
+            formatter: function (value, context) {
+              const percentage = chartData[context.dataIndex].percentage.toFixed(1);
+              return `${value} (${percentage}%)`;
+            },
+            font: {
+              weight: 'bold'
+            }
+          }
+        }
+      }
+    });
+  };
+
+  useEffect(() => {
+    if (selectedChartColumn1 && showChart) {
+      prepareAndRenderChart(selectedChartColumn1, chartRef1, 'myChart1');
+    }
+  }, [selectedChartColumn1, rows]);
+
+  useEffect(() => {
+    if (selectedChartColumn2 && showChart) {
+      prepareAndRenderChart(selectedChartColumn2, chartRef2, 'myChart2');
+    }
+  }, [selectedChartColumn2, rows]);
+
+
   const addFilter = () => {
     setFilters([...filters, { column: '', operator: '', value: '', value2: '' }]);
   };
 
   const updateFilter = useCallback((index, field, value) => {
-    const newFilters = [...filters];
-    newFilters[index] = { ...newFilters[index], [field]: value };
-    setFilters(newFilters);
-  }, [filters]);
+    setFilters(prevFilters => {
+      const newFilters = [...prevFilters];
+      newFilters[index] = { ...newFilters[index], [field]: value };
+
+      if (field === 'operator') {
+        newFilters[index].isNot = value.startsWith('not_');
+      }
+
+      return newFilters;
+    });
+  }, []);
 
   const removeFilter = (index) => {
     const newFilters = filters.filter((_, i) => i !== index);
@@ -292,22 +434,26 @@ const Explorer = () => {
     URL.revokeObjectURL(url);
   }
 
-  const getOperatorOptions = (columnId) => {
+  const getExpandedOperatorOptions = (columnId) => {
     const column = columns.find(col => col.accessor === columnId);
     if (!column) return [];
 
     switch (column.filter) {
       case 'number':
         return [
-          { value: OPERATORS.equals, label: 'Equals' },
-          { value: OPERATORS.greaterThan, label: 'Greater Than' },
-          { value: OPERATORS.lessThan, label: 'Less Than' },
-          { value: OPERATORS.between, label: 'Between' },
+          { value: 'equals', label: 'equals' },
+          { value: 'not_equals', label: 'does not equal' },
+          { value: 'greater_than', label: 'is greater than' },
+          { value: 'less_than', label: 'is less than' },
+          { value: 'between', label: 'is between' },
+          { value: 'not_between', label: 'is not between' },
         ];
       case 'text':
         return [
-          { value: OPERATORS.equals, label: 'Equals' },
-          { value: OPERATORS.contains, label: 'Contains' },
+          { value: 'equals', label: 'equals' },
+          { value: 'not_equals', label: 'does not equal' },
+          { value: 'contains', label: 'contains' },
+          { value: 'not_contains', label: 'does not contain' },
         ];
       default:
         return [];
@@ -340,9 +486,12 @@ const Explorer = () => {
     );
   };
 
+
+
   return (
     <div className="">
       <h1 className="text-2xl font-bold mb-4">Basic Explorer</h1>
+
 
       <div className="bg-slate-600 text-white p-2 self-center rounded-sm">
         <input
@@ -409,10 +558,12 @@ const Explorer = () => {
               </div>
 
             </div>
+
             <div className='flex flex-row w-full justify-between mt-2 mb-2 '>
               <div className='text-lg font-semibold' >Filters</div>
               <div className='text-slate-500' onClick={() => setShowFilters(!showFilters)}>{showFilters ? <FontAwesomeIcon className="text-white" icon={faChevronUp} /> : <FontAwesomeIcon className="text-white" icon={faChevronDown} />}</div>
             </div>
+
             {
               showFilters && (
                 <div className='p-2 text-slate-700'>
@@ -449,21 +600,21 @@ const Explorer = () => {
                     className="w-full px-3 py-2 border rounded mb-4 border-gray-300"
                   />
                   {filters.map((filter, index) => (
-                    <div key={index} className="flex items-center space-x-2 mb-2 relative">
+                    <div key={index} className="grid grid-cols-1 gap-2 md:grid-cols-12 items-center mb-2 relative">
                       {index > 0 && (
-                        <div className="w-1/6 relative ">
+                        <div className="col-span-1">
                           <Select
                             options={[
                               { value: LOGIC_OPERATORS.AND, label: 'AND' },
                             ]}
                             value={{ value: filter.logic, label: filter.logic }}
                             onChange={(selected) => updateFilter(index, 'logic', selected.value)}
-                            className="relative z-50"
+                            className="relative z-50 w-full"
                             classNamePrefix="select"
                           />
                         </div>
                       )}
-                      <div className="w-1/4 relative">
+                      <div className="md:col-span-4 relative">
                         <Select
                           options={columns.map(col => ({ value: col.accessor, label: col.Header }))}
                           value={filter.column ? { value: filter.column, label: columns.find(col => col.accessor === filter.column)?.Header } : null}
@@ -472,11 +623,14 @@ const Explorer = () => {
                           classNamePrefix="select"
                         />
                       </div>
-                      <div className="w-1/4 relative z-40">
+                      <div className="col-span-3 relative z-40">
                         <Select
-                          options={getOperatorOptions(filter.column)}
-                          value={filter.operator ? { value: filter.operator, label: getOperatorOptions(filter.column).find(op => op.value === filter.operator)?.label } : null}
-                          onChange={(selected) => updateFilter(index, 'operator', selected?.value)}
+                          options={getExpandedOperatorOptions(filter.column)}
+                          value={filter.operator ? { value: filter.operator, label: getExpandedOperatorOptions(filter.column).find(op => op.value === filter.operator)?.label } : null}
+                          onChange={(selected) => {
+                            updateFilter(index, 'operator', selected?.value);
+                            updateFilter(index, 'isNot', selected?.value.startsWith('not_'));
+                          }}
                           className="relative z-30"
                           classNamePrefix="select"
                         />
@@ -486,20 +640,20 @@ const Explorer = () => {
                         value={filter.value}
                         onChange={(e) => updateFilter(index, 'value', e.target.value)}
                         placeholder="Value"
-                        className="w-1/4 px-3 py-2 border rounded border-gray-300 relative z-20"
+                        className="col-span-2 px-3 py-2 border rounded border-gray-300 relative z-20"
                       />
-                      {filter.operator === OPERATORS.between && (
+                      {(filter.operator === OPERATORS.between || filter.operator === OPERATORS.not_between) && (
                         <input
                           type="text"
                           value={filter.value2}
                           onChange={(e) => updateFilter(index, 'value2', e.target.value)}
                           placeholder="Value 2"
-                          className="w-1/4 px-3 py-2 border rounded border-gray-300 relative z-20"
+                          className="col-span-2 px-3 py-2 border rounded border-gray-300 relative z-20"
                         />
                       )}
                       <button
                         onClick={() => removeFilter(index)}
-                        className="px-3 py-2 border rounded hover:bg-gray-800 border-gray-300 text-white relative z-20"
+                        className="col-span-1 px-3 py-2 border rounded hover:bg-gray-800 border-gray-300 text-white relative z-20"
                       >
                         &times;
                       </button>
@@ -514,7 +668,52 @@ const Explorer = () => {
                 </div>
               )
             }
+            <div className='flex flex-row w-full justify-between mt-2 mb-2 '>
+              <div className='text-lg font-semibold' >Chart</div>
+              <div className='text-slate-500' onClick={() => setShowChart(!showChart)}>{showChart ? <FontAwesomeIcon className="text-white" icon={faChevronUp} /> : <FontAwesomeIcon className="text-white" icon={faChevronDown} />}</div>
+            </div>
+            {showChart && (
+              <>
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                  <select
+                    value={selectedChartColumn1}
+                    onChange={(e) => setSelectedChartColumn1(e.target.value)}
+                    className="mt-1 block text-slate-800 w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                  >
+                    <option value="">Select a column to visualize</option>
+                    {columns.map(column => (
+                      <option key={column.accessor} value={column.accessor}>
+                        {column.Header}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={selectedChartColumn2}
+                    onChange={(e) => setSelectedChartColumn2(e.target.value)}
+                    className="mt-1 block text-slate-800 w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                  >
+                    <option value="">Select a column to visualize</option>
+                    {columns.map(column => (
+                      <option key={column.accessor} value={column.accessor}>
+                        {column.Header}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className='grid grid-cols-1 md:grid-cols-2'>
+                  <div className="col-span-1 mt-4">
+                    <canvas id="myChart1"></canvas>
+                  </div>
+                  <div className="col-span-1 mt-4">
+                    <canvas id="myChart2"></canvas>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
+
+
+
 
 
         )}
