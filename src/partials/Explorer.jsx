@@ -885,7 +885,7 @@ const Explorer = () => {
                       column: selected.value
                     })}
                     options={getColumnOptions()}
-                    className="mt-1 block w-full"
+                    className="mt-1 block w-full z-50"
                     placeholder="Select a column to visualize"
                   />
                   <Select
@@ -898,7 +898,7 @@ const Explorer = () => {
                       column: selected.value
                     })}
                     options={getColumnOptions()}
-                    className="mt-1 block w-full"
+                    className="mt-1 block w-full z-50"
                     placeholder="Select a column to visualize"
                   />
                 </div>
