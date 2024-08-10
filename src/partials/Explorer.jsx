@@ -428,8 +428,12 @@ const Explorer = () => {
       percentage: (value / totalCount) * 100
     }));
 
-    //sort by x axis, then my smallest to largest
-    chartData.sort((a, b) => a.count - b.count).sort((a, b) => a.label.localeCompare(b.label));
+    const naturalSort = (a, b) => {
+      const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+      return collator.compare(a.label, b.label);
+    };
+
+    chartData.sort((a, b) => a.count - b.count).sort(naturalSort);
 
 
     if (chartRef.current) {
