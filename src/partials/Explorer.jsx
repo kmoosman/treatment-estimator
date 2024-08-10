@@ -6,7 +6,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import toast from 'react-hot-toast';
 import Chart from 'chart.js/auto';
 
-
 const OPERATORS = {
   equals: 'equals',
   not_equals: 'not_equals',
@@ -37,8 +36,16 @@ const Explorer = () => {
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [selectedColumns, setSelectedColumns] = useState([]);
-  const [selectedChartColumn1, setSelectedChartColumn1] = useState('');
-  const [selectedChartColumn2, setSelectedChartColumn2] = useState('');
+  const [selectedChartColumn1, setSelectedChartColumn1] = useState({ table: '', column: '' });
+  const [selectedChartColumn2, setSelectedChartColumn2] = useState({ table: '', column: '' });
+  const [secondaryData, setSecondaryData] = useState([]);
+  const [secondaryColumns, setSecondaryColumns] = useState([]);
+  const [activeTab, setActiveTab] = useState('primary');
+  const [linkingColumn, setLinkingColumn] = useState('');
+  const [linkedCSVOpen, setLinkedCSVOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+
+
   const chartRef1 = useRef(null);
   const chartRef2 = useRef(null);
 
@@ -286,6 +293,96 @@ const Explorer = () => {
     }
   };
 
+  const handleSecondaryFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      if (file.size > FILE_SIZE_LIMIT) {
+        console.error('File size exceeds the limit of 5MB');
+        setDebugInfo('Secondary file size exceeds the limit of 5MB');
+        return;
+      }
+
+      setIsProcessing(true);
+      setProgress(0);
+
+      try {
+        const worker = new Worker(new URL('../utils/csvWorker.js', import.meta.url), { type: 'module' });
+        worker.onmessage = (e) => {
+          if (e.data.type === 'progress') {
+            setProgress(e.data.progress);
+          } else if (e.data.type === 'result') {
+            const filteredColumns = e.data.fields.filter(field => {
+              return e.data.data.some(row => row[field] && row[field] !== '--' && row[field] !== '');
+            });
+
+            setSecondaryData(e.data.data);
+
+            const newColumns = filteredColumns.map(field => ({
+              Header: field,
+              accessor: field,
+              filter: isNaN(e.data.data[0][field]) ? 'text' : 'number'
+            }));
+
+            setSecondaryColumns(newColumns);
+            setIsProcessing(false);
+            setDebugInfo(`Secondary file loaded successfully. ${e.data.data.length} rows.`);
+          } else if (e.data.type === 'error') {
+            setIsProcessing(false);
+            setDebugInfo(`Error processing secondary file: ${e.data.error}`);
+          }
+        };
+
+        worker.onerror = (error) => {
+          setIsProcessing(false);
+          setDebugInfo(`Worker error for secondary file: ${error.message}`);
+        };
+
+        worker.postMessage({ file });
+      } catch (error) {
+        setIsProcessing(false);
+        setDebugInfo(`Error starting worker for secondary file: ${error.message}`);
+      }
+    } else {
+      console.error('No secondary file selected');
+    }
+  };
+
+  const getFilteredSecondaryData = () => {
+    if (!linkingColumn || !rows.length || !secondaryData.length) return [];
+
+    const primaryValues = new Set(rows.map(row => row.values[linkingColumn]));
+    return secondaryData.filter(row => primaryValues.has(row[linkingColumn]));
+  };
+
+  const filteredSecondaryData = useMemo(() => getFilteredSecondaryData(), [rows, secondaryData, linkingColumn]);
+
+  const {
+    getTableProps: getSecondaryTableProps,
+    getTableBodyProps: getSecondaryTableBodyProps,
+    headerGroups: secondaryHeaderGroups,
+    page: secondaryPage,
+    prepareRow: prepareSecondaryRow,
+    state: { pageIndex: secondaryPageIndex, pageSize: secondaryPageSize },
+    canPreviousPage: canPreviousSecondaryPage,
+    canNextPage: canNextSecondaryPage,
+    pageOptions: secondaryPageOptions,
+    pageCount: secondaryPageCount,
+    gotoPage: gotoSecondaryPage,
+    nextPage: nextSecondaryPage,
+    previousPage: previousSecondaryPage,
+    setPageSize: setSecondaryPageSize,
+  } = useTable(
+    {
+      columns: secondaryColumns,
+      data: filteredSecondaryData,
+      initialState: { pageIndex: 0, pageSize: 50 },
+    },
+    useFilters,
+    useSortBy,
+    usePagination
+  );
+
+
   useEffect(() => {
     return () => {
       if (chartRef1.current) {
@@ -297,11 +394,25 @@ const Explorer = () => {
     };
   }, []);
 
-  const prepareAndRenderChart = (column, chartRef, chartId) => {
-    if (!column || !rows.length) return;
+  const prepareAndRenderChart = (selection, chartRef, chartId) => {
+    if (!selection.table || !selection.column) return;
 
-    const aggregatedData = rows.reduce((acc, row) => {
-      const value = row.values[column];
+    let sourceData;
+    if (selection.table === 'primary') {
+      sourceData = rows;
+    } else {
+      sourceData = filteredSecondaryData;
+    }
+
+    if (!sourceData || sourceData.length === 0) {
+      console.error('No data available for the selected table');
+      return;
+    }
+
+    const aggregatedData = sourceData.reduce((acc, row) => {
+      const value = row.values ? row.values[selection.column] : row[selection.column];
+      if (value === undefined) return acc;
+
       if (acc[value]) {
         acc[value]++;
       } else {
@@ -310,7 +421,6 @@ const Explorer = () => {
       return acc;
     }, {});
 
-
     const totalCount = Object.values(aggregatedData).reduce((sum, count) => sum + count, 0);
     const chartData = Object.entries(aggregatedData).map(([key, value]) => ({
       label: key,
@@ -318,7 +428,9 @@ const Explorer = () => {
       percentage: (value / totalCount) * 100
     }));
 
-    chartData.sort((a, b) => a.count - b.count);
+    //sort by x axis, then my smallest to largest
+    chartData.sort((a, b) => a.count - b.count).sort((a, b) => a.label.localeCompare(b.label));
+
 
     if (chartRef.current) {
       chartRef.current.destroy();
@@ -330,7 +442,7 @@ const Explorer = () => {
       data: {
         labels: chartData.map(item => item.label),
         datasets: [{
-          label: `${column} Distribution`,
+          label: `${selection.column} Distribution`,
           data: chartData.map(item => item.count),
           backgroundColor: 'rgba(75, 192, 192, 0.6)',
           borderColor: 'rgba(75, 192, 192, 1)',
@@ -377,17 +489,16 @@ const Explorer = () => {
   };
 
   useEffect(() => {
-    if (selectedChartColumn1 && showChart) {
+    if (selectedChartColumn1.column && showChart) {
       prepareAndRenderChart(selectedChartColumn1, chartRef1, 'myChart1');
     }
-  }, [selectedChartColumn1, rows]);
+  }, [selectedChartColumn1, rows, filteredSecondaryData]);
 
   useEffect(() => {
-    if (selectedChartColumn2 && showChart) {
+    if (selectedChartColumn2.column && showChart) {
       prepareAndRenderChart(selectedChartColumn2, chartRef2, 'myChart2');
     }
-  }, [selectedChartColumn2, rows]);
-
+  }, [selectedChartColumn2, rows, filteredSecondaryData]);
 
   const addFilter = () => {
     setFilters([...filters, { column: '', operator: '', value: '', value2: '' }]);
@@ -486,30 +597,114 @@ const Explorer = () => {
     );
   };
 
+  const getColumnOptions = () => {
+    const primaryOptions = columns.map(col => ({
+      value: col.accessor,
+      label: `Primary: ${col.Header}`,
+      table: 'primary'
+    }));
+    const secondaryOptions = secondaryColumns.map(col => ({
+      value: col.accessor,
+      label: `Secondary: ${col.Header}`,
+      table: 'secondary'
+    }));
+    return [...primaryOptions, ...secondaryOptions];
+  };
+
+  const addLinkedCSV = () => {
+    setLinkedCSVOpen(!linkedCSVOpen);
+    if (!linkedCSVOpen) {
+      setModalOpen(true);
+    }
+
+  }
 
 
   return (
     <div className="">
-      <h1 className="text-2xl font-bold mb-4">Basic Explorer</h1>
+      {modalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-lg mx-auto">
+            <div className="flex flex-col items-center">
+              <div className="mb-4 text-left">
+                <div className="text-sm text-gray-600">
+                  <h3 className="font-semibold text-base mb-2 text-center">Linking a Secondary CSV</h3>
+                  <ul className="list-disc list-inside mb-2">
+                    <li>Filter the second table based on the first table's filters</li>
+                    <li>Compare data across two related datasets</li>
+                  </ul>
 
+                  <h4 className="font-medium mt-2 mb-1">Key Requirement:</h4>
+                  <p className="mb-2">Both CSVs must have a common column with unique identifiers.</p>
 
-      <div className="bg-slate-600 text-white p-2 self-center rounded-sm">
-        <input
-          type="file"
-          accept=".csv"
-          onChange={handleFileUpload}
-          className="mt-2 mb-2 p-2"
-        />
-        <div className='pl-2 text-xs'>5 MB file size limit. </div>
-        <div className='pl-2 text-xs'>This is a full front-end solution. No data is uploaded to a server, and all processing is done in the browser. Large datasets may become unresponsive or take longer to process. A refresh will clear the selected file. </div>
-        {isProcessing && (
-          <div className="mt-2">
-            Processing file... {progress.toFixed(2)}%
-            <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-              <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
+                  <h4 className="font-medium mt-2 mb-1">Example:</h4>
+                  <p>A "Sample ID" column in both the priamry and secondary datasets.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setModalOpen(false)}
+                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-200"
+              >
+                Close
+              </button>
             </div>
           </div>
+        </div>
+      )}
+      <h1 className="text-2xl font-bold mb-4">CSV Explorer</h1>
+
+      <div className="bg-slate-600 text-white p-2 self-center rounded-sm">
+        <div className='flex flex-row justify-between w-full'>
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold mb-2">Primary CSV</h2>
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleFileUpload}
+              className="mt-2 mb-2 p-2"
+            />
+          </div>
+
+
+
+          {linkedCSVOpen && (
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold mb-2">Secondary/Linked CSV</h2>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleSecondaryFileUpload}
+                className="mt-2 mb-2 p-2"
+              />
+            </div>
+          )
+          }
+          <div className='pr-4'>
+
+            {/* Plus button to add secondary file */}
+            <button className="text-slate-500  text-xs" onClick={() => addLinkedCSV()}>{!linkedCSVOpen ? "Add" : "Hide"} Linked CSV</button>
+
+          </div>
+        </div>
+
+
+
+
+        {data.length > 0 && secondaryData.length > 0 && (
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-white mb-2 z-40">
+              Select Linking Column
+            </label>
+            <Select
+              options={columns.map(col => ({ value: col.accessor, label: col.Header }))}
+              value={linkingColumn ? { value: linkingColumn, label: columns.find(col => col.accessor === linkingColumn)?.Header } : null}
+              onChange={(selected) => setLinkingColumn(selected?.value)}
+              className="text-slate-800 z-45"
+              classNamePrefix="select"
+            />
+          </div>
         )}
+
         {data.length > 0 && (
           <div className='p-2'>
             <div>
@@ -579,7 +774,7 @@ const Explorer = () => {
                         label: columns.find(col => col.accessor === colName)?.Header
                       }))}
                       onChange={handleColumnSelection}
-                      className="basic-multi-select z-50"
+                      className="basic-multi-select z-40"
                       classNamePrefix="select"
                       closeMenuOnSelect={false}
                       hideSelectedOptions={false}
@@ -672,33 +867,36 @@ const Explorer = () => {
               <div className='text-lg font-semibold' >Chart</div>
               <div className='text-slate-500' onClick={() => setShowChart(!showChart)}>{showChart ? <FontAwesomeIcon className="text-white" icon={faChevronUp} /> : <FontAwesomeIcon className="text-white" icon={faChevronDown} />}</div>
             </div>
+
             {showChart && (
               <>
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                  <select
-                    value={selectedChartColumn1}
-                    onChange={(e) => setSelectedChartColumn1(e.target.value)}
-                    className="mt-1 block text-slate-800 w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                  >
-                    <option value="">Select a column to visualize</option>
-                    {columns.map(column => (
-                      <option key={column.accessor} value={column.accessor}>
-                        {column.Header}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={selectedChartColumn2}
-                    onChange={(e) => setSelectedChartColumn2(e.target.value)}
-                    className="mt-1 block text-slate-800 w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                  >
-                    <option value="">Select a column to visualize</option>
-                    {columns.map(column => (
-                      <option key={column.accessor} value={column.accessor}>
-                        {column.Header}
-                      </option>
-                    ))}
-                  </select>
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-4 text-slate-800'>
+                  <Select
+                    value={selectedChartColumn1.column ? {
+                      value: selectedChartColumn1.column,
+                      label: `${selectedChartColumn1.table}: ${selectedChartColumn1.column}`
+                    } : null}
+                    onChange={(selected) => setSelectedChartColumn1({
+                      table: selected.table,
+                      column: selected.value
+                    })}
+                    options={getColumnOptions()}
+                    className="mt-1 block w-full"
+                    placeholder="Select a column to visualize"
+                  />
+                  <Select
+                    value={selectedChartColumn2.column ? {
+                      value: selectedChartColumn2.column,
+                      label: `${selectedChartColumn2.table}: ${selectedChartColumn2.column}`
+                    } : null}
+                    onChange={(selected) => setSelectedChartColumn2({
+                      table: selected.table,
+                      column: selected.value
+                    })}
+                    options={getColumnOptions()}
+                    className="mt-1 block w-full"
+                    placeholder="Select a column to visualize"
+                  />
                 </div>
                 <div className='grid grid-cols-1 md:grid-cols-2'>
                   <div className="col-span-1 mt-4">
@@ -759,101 +957,226 @@ const Explorer = () => {
             </button>
           </span>
         ))}
+        {data.length > 0 && (
+          <div className="mt-4 w-full">
+            {linkedCSVOpen && (
+              <div className="flex mb-4">
+                <button
+                  className={`mr-2 px-4 py-2 ${activeTab === 'primary' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'} rounded`}
+                  onClick={() => setActiveTab('primary')}
+                >
+                  Primary Data
+                </button>
 
-      </div>
-      {
-        data.length > 0 ? (
-          <div className="max-h-[600px] overflow-y-auto">
-            <table {...getTableProps()} className="min-w-full divide-y divide-gray-200 relative">
-              <thead className="bg-gray-50 sticky top-0 z-10">
-                {headerGroups.map(headerGroup => (
-                  <tr {...headerGroup.getHeaderGroupProps()}>
-                    {headerGroup.headers.map(column => (
-                      <th
-                        {...column.getHeaderProps(column.getSortByToggleProps())}
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        {column.render('Header')}
-                        <span>
-                          {column.isSorted
-                            ? column.isSortedDesc
-                              ? ' 🔽'
-                              : ' 🔼'
-                            : ''}
-                        </span>
-                      </th>
-                    ))}
-                  </tr>
-                ))}
-              </thead>
-              <tbody {...getTableBodyProps()} className="bg-white divide-y divide-gray-200">
-                {page.map(row => {
-                  prepareRow(row);
-                  return (
-                    <tr {...row.getRowProps()}>
-                      {row.cells.map(cell => (
-                        <td
-                          {...cell.getCellProps()}
-                          className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                        >
-                          {cell.render('Cell')}
-                        </td>
-                      ))}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-
-            <div className="pagination mt-4 flex items-center justify-between">
-              <div>
-                <button onClick={() => gotoPage(0)} disabled={!canPreviousPage} className="mr-2 px-3 py-1 bg-gray-200 rounded">
-                  {'<<'}
-                </button>
-                <button onClick={() => previousPage()} disabled={!canPreviousPage} className="mr-2 px-3 py-1 bg-gray-200 rounded">
-                  {'<'}
-                </button>
-                <button onClick={() => nextPage()} disabled={!canNextPage} className="mr-2 px-3 py-1 bg-gray-200 rounded">
-                  {'>'}
-                </button>
-                <button onClick={() => gotoPage(pageCount - 1)} disabled={!canNextPage} className="mr-2 px-3 py-1 bg-gray-200 rounded">
-                  {'>>'}
+                <button
+                  className={`px-4 py-2 ${activeTab === 'secondary' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'} rounded`}
+                  onClick={() => setActiveTab('secondary')}
+                >
+                  Secondary Data
                 </button>
               </div>
-              <span>
-                Page{' '}
-                <strong>
-                  {pageIndex + 1} of {pageOptions.length}
-                </strong>{' '}
-              </span>
-              <select
-                value={pageSize}
-                onChange={e => {
-                  setPageSize(Number(e.target.value));
-                  setReactTablePageSize(Number(e.target.value));
-                }}
-                className="ml-2 px-2 py-1 border rounded w-32"
-              >
-                {[10, 20, 30, 40, 50].map(pageSize => (
-                  <option key={pageSize} value={pageSize}>
-                    Show {pageSize}
-                  </option>
-                ))}
-              </select>
-            </div>
 
-            <div className='flex flex-row gap-5 justify-between'>
-              <div className='mt-4'>Total rows: {rows.length} of {data.length}</div>
-              <div className='mt-4'>Showing: {page.length} of {rows.length}</div>
-              <div className='mt-4'>Percentage of Total Records: {((rows.length / data.length) * 100).toFixed(2)}%</div>
-            </div>
-          </div>
+            )}
 
-        ) :
-          <div className="text-red-500">No data to display. Please upload a CSV file.</div>
-      }
+            {activeTab === 'primary' ? (
+              <div className=''> {
+
+                data.length > 0 ? (
+                  <div className="max-h-[600px] overflow-y-auto max-w-full">
+                    <table {...getTableProps()} className="min-w-full divide-y divide-gray-200 relative">
+                      <thead className="bg-gray-50 sticky top-0 z-10">
+                        {headerGroups.map(headerGroup => (
+                          <tr {...headerGroup.getHeaderGroupProps()}>
+                            {headerGroup.headers.map(column => (
+                              <th
+                                {...column.getHeaderProps(column.getSortByToggleProps())}
+                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                              >
+                                {column.render('Header')}
+                                <span>
+                                  {column.isSorted
+                                    ? column.isSortedDesc
+                                      ? ' 🔽'
+                                      : ' 🔼'
+                                    : ''}
+                                </span>
+                              </th>
+                            ))}
+                          </tr>
+                        ))}
+                      </thead>
+                      <tbody {...getTableBodyProps()} className="bg-white divide-y divide-gray-200">
+                        {page.map(row => {
+                          prepareRow(row);
+                          return (
+                            <tr {...row.getRowProps()}>
+                              {row.cells.map(cell => (
+                                <td
+                                  {...cell.getCellProps()}
+                                  className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                                >
+                                  {cell.render('Cell')}
+                                </td>
+                              ))}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+
+                    <div className="pagination mt-4 flex items-center justify-between">
+                      <div>
+                        <button onClick={() => gotoPage(0)} disabled={!canPreviousPage} className="mr-2 px-3 py-1 bg-gray-200 rounded">
+                          {'<<'}
+                        </button>
+                        <button onClick={() => previousPage()} disabled={!canPreviousPage} className="mr-2 px-3 py-1 bg-gray-200 rounded">
+                          {'<'}
+                        </button>
+                        <button onClick={() => nextPage()} disabled={!canNextPage} className="mr-2 px-3 py-1 bg-gray-200 rounded">
+                          {'>'}
+                        </button>
+                        <button onClick={() => gotoPage(pageCount - 1)} disabled={!canNextPage} className="mr-2 px-3 py-1 bg-gray-200 rounded">
+                          {'>>'}
+                        </button>
+                      </div>
+                      <span>
+                        Page{' '}
+                        <strong>
+                          {pageIndex + 1} of {pageOptions.length}
+                        </strong>{' '}
+                      </span>
+                      <select
+                        value={pageSize}
+                        onChange={e => {
+                          setPageSize(Number(e.target.value));
+                          setReactTablePageSize(Number(e.target.value));
+                        }}
+                        className="ml-2 px-2 py-1 border rounded w-32"
+                      >
+                        {[10, 20, 30, 40, 50].map(pageSize => (
+                          <option key={pageSize} value={pageSize}>
+                            Show {pageSize}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className='flex flex-row gap-5 justify-between'>
+                      <div className='mt-4'>Total rows: {rows.length} of {data.length}</div>
+                      <div className='mt-4'>Showing: {page.length} of {rows.length}</div>
+                      <div className='mt-4'>Percentage of Total Records: {((rows.length / data.length) * 100).toFixed(2)}%</div>
+                    </div>
+                  </div>
+
+                ) : (
+                  <div className="text-red-500">No data to display. Please upload a CSV file.</div>
+                )
+              }
+              </div>
+            )
+
+              : (
+                linkedCSVOpen && (
+                  <div>
+                    {/* Render secondary table */}
+                    <div className="max-h-[600px] overflow-y-auto max-w-full">
+                      <table {...getSecondaryTableProps()} className="max-w-[400px] overflow-y-auto divide-y divide-gray-200 relative">
+                        <thead className="bg-gray-50 sticky top-0 z-10">
+                          {secondaryHeaderGroups.map(headerGroup => (
+                            <tr {...headerGroup.getHeaderGroupProps()}>
+                              {headerGroup.headers.map(column => (
+                                <th
+                                  {...column.getHeaderProps(column.getSortByToggleProps())}
+                                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >
+                                  {column.render('Header')}
+                                  <span>
+                                    {column.isSorted
+                                      ? column.isSortedDesc
+                                        ? ' 🔽'
+                                        : ' 🔼'
+                                      : ''}
+                                  </span>
+                                </th>
+                              ))}
+                            </tr>
+                          ))}
+                        </thead>
+                        <tbody {...getSecondaryTableBodyProps()} className="bg-white divide-y divide-gray-200">
+                          {secondaryPage.map(row => {
+                            prepareSecondaryRow(row);
+                            return (
+                              <tr {...row.getRowProps()}>
+                                {row.cells.map(cell => (
+                                  <td
+                                    {...cell.getCellProps()}
+                                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                                  >
+                                    {cell.render('Cell')}
+                                  </td>
+                                ))}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+
+                      {/* Secondary table pagination */}
+                      <div className="pagination mt-4 flex items-center justify-between">
+                        <div>
+                          <button onClick={() => gotoSecondaryPage(0)} disabled={!canPreviousSecondaryPage} className="mr-2 px-3 py-1 bg-gray-200 rounded">
+                            {'<<'}
+                          </button>
+                          <button onClick={() => previousSecondaryPage()} disabled={!canPreviousSecondaryPage} className="mr-2 px-3 py-1 bg-gray-200 rounded">
+                            {'<'}
+                          </button>
+                          <button onClick={() => nextSecondaryPage()} disabled={!canNextSecondaryPage} className="mr-2 px-3 py-1 bg-gray-200 rounded">
+                            {'>'}
+                          </button>
+                          <button onClick={() => gotoSecondaryPage(secondaryPageCount - 1)} disabled={!canNextSecondaryPage} className="mr-2 px-3 py-1 bg-gray-200 rounded">
+                            {'>>'}
+                          </button>
+                        </div>
+                        <span>
+                          Page{' '}
+                          <strong>
+                            {secondaryPageIndex + 1} of {secondaryPageOptions.length}
+                          </strong>{' '}
+                        </span>
+                        <select
+                          value={secondaryPageSize}
+                          onChange={e => {
+                            setSecondaryPageSize(Number(e.target.value));
+                          }}
+                          className="ml-2 px-2 py-1 border rounded w-32"
+                        >
+                          {[10, 20, 30, 40, 50].map(pageSize => (
+                            <option key={pageSize} value={pageSize}>
+                              Show {pageSize}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className='flex flex-row gap-5 justify-between'>
+                        <div className='mt-4'>Total rows: {filteredSecondaryData.length} of {secondaryData.length}</div>
+                        <div className='mt-4'>Showing: {secondaryPage.length} of {filteredSecondaryData.length}</div>
+                        <div className='mt-4'>Percentage of Total Records: {((filteredSecondaryData.length / secondaryData.length) * 100).toFixed(2)}%</div>
+                      </div>
+                    </div>
+                  </div>
+                )
+
+              )}
+          </div>)
+        }
+
+      </div>
+
+
     </div >
   );
+
 };
 
 export default Explorer;
@@ -870,10 +1193,10 @@ const ConfigTable = ({ savedConfigs, loadConfig, deleteConfig }) => {
     ]
   return (
     <table className="min-w-full divide-y divide-gray-200 text-slate-800 rounded-md">
-      <thead className="bg-gray-50">
+      <thead className="bg-gray-50 overflow-scroll">
         <tr>
           {configTableHeaders.map((header, index) => (
-            <th key={index} className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{header}</th>
+            <th key={index} className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-scroll">{header}</th>
           ))}
         </tr>
       </thead>
