@@ -696,7 +696,7 @@ const Explorer = () => {
 
         {data.length > 0 && secondaryData.length > 0 && (
           <div className="mt-4">
-            <label className="block text-sm font-medium text-white mb-2 z-40">
+            <label className="block text-sm font-medium text-white mb-2">
               Select Linking Column
             </label>
             <Select
@@ -778,7 +778,7 @@ const Explorer = () => {
                         label: columns.find(col => col.accessor === colName)?.Header
                       }))}
                       onChange={handleColumnSelection}
-                      className="basic-multi-select z-40"
+                      className="basic-multi-select z-50"
                       classNamePrefix="select"
                       closeMenuOnSelect={false}
                       hideSelectedOptions={false}
@@ -808,7 +808,7 @@ const Explorer = () => {
                             ]}
                             value={{ value: filter.logic, label: filter.logic }}
                             onChange={(selected) => updateFilter(index, 'logic', selected.value)}
-                            className="relative z-50 w-full"
+                            className="relative w-full z-30"
                             classNamePrefix="select"
                           />
                         </div>
@@ -867,7 +867,7 @@ const Explorer = () => {
                 </div>
               )
             }
-            <div className='flex flex-row w-full justify-between mt-2 mb-2 '>
+            <div className='flex flex-row w-full justify-between mt-2 mb-2'>
               <div className='text-lg font-semibold' >Chart</div>
               <div className='text-slate-500' onClick={() => setShowChart(!showChart)}>{showChart ? <FontAwesomeIcon className="text-white" icon={faChevronUp} /> : <FontAwesomeIcon className="text-white" icon={faChevronDown} />}</div>
             </div>
@@ -885,7 +885,7 @@ const Explorer = () => {
                       column: selected.value
                     })}
                     options={getColumnOptions()}
-                    className="mt-1 block w-full z-50"
+                    className="mt-1 block w-full z-30"
                     placeholder="Select a column to visualize"
                   />
                   <Select
@@ -898,7 +898,7 @@ const Explorer = () => {
                       column: selected.value
                     })}
                     options={getColumnOptions()}
-                    className="mt-1 block w-full z-50"
+                    className="mt-1 block w-full z-30"
                     placeholder="Select a column to visualize"
                   />
                 </div>
