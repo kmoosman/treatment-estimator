@@ -632,14 +632,14 @@ const Explorer = () => {
             <div className="flex flex-col items-center">
               <div className="mb-4 text-left">
                 <div className="text-sm text-gray-600">
-                  <h3 className="font-semibold text-base mb-2 text-center">Linking a Secondary CSV</h3>
+                  <h3 className="font-semibold text-base mb-2 text-center">Linking a Secondary File</h3>
                   <ul className="list-disc list-inside mb-2">
                     <li>Filter the second table based on the first table's filters</li>
                     <li>Compare data across two related datasets</li>
                   </ul>
 
                   <h4 className="font-medium mt-2 mb-1">Key Requirement:</h4>
-                  <p className="mb-2">Both CSVs must have a common column with unique identifiers.</p>
+                  <p className="mb-2">Both files must have a common column with unique identifiers.</p>
 
                   <h4 className="font-medium mt-2 mb-1">Example:</h4>
                   <p>A "Sample ID" column in both the priamry and secondary datasets.</p>
@@ -660,10 +660,10 @@ const Explorer = () => {
       <div className="bg-slate-600 text-white p-2 self-center rounded-sm">
         <div className='flex flex-row justify-between w-full'>
           <div className="mb-4">
-            <h2 className="text-lg font-semibold mb-2">Primary CSV</h2>
+            <h2 className="text-lg font-semibold mb-2">Primary File <span className='text-xs font-medium'>(csv or tsv)</span></h2>
             <input
               type="file"
-              accept=".csv"
+              accept=".csv,.tsv"
               onChange={handleFileUpload}
               className="mt-2 mb-2 p-2"
             />
@@ -673,10 +673,10 @@ const Explorer = () => {
 
           {linkedCSVOpen && (
             <div className="mb-4">
-              <h2 className="text-lg font-semibold mb-2">Secondary/Linked CSV</h2>
+              <h2 className="text-lg font-semibold mb-2">Secondary/Linked <span className='text-xs font-medium'>(csv or tsv)</span></h2>
               <input
                 type="file"
-                accept=".csv"
+                accept=".csv,.tsv"
                 onChange={handleSecondaryFileUpload}
                 className="mt-2 mb-2 p-2"
               />
@@ -686,7 +686,7 @@ const Explorer = () => {
           <div className='pr-4'>
 
             {/* Plus button to add secondary file */}
-            <button className="text-slate-500  text-xs" onClick={() => addLinkedCSV()}>{!linkedCSVOpen ? "Add" : "Hide"} Linked CSV</button>
+            <button className="text-slate-500  text-xs" onClick={() => addLinkedCSV()}>{!linkedCSVOpen ? "Add" : "Hide"} Linked File</button>
 
           </div>
         </div>
@@ -778,7 +778,7 @@ const Explorer = () => {
                         label: columns.find(col => col.accessor === colName)?.Header
                       }))}
                       onChange={handleColumnSelection}
-                      className="basic-multi-select z-50"
+                      className="basic-multi-select z-30"
                       classNamePrefix="select"
                       closeMenuOnSelect={false}
                       hideSelectedOptions={false}
