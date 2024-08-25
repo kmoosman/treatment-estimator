@@ -39,9 +39,9 @@ export const Dashboard = ({ type }) => {
     {
       calculator: "Explorer (beta)",
       highlightTitle:
-        "Data Explorer for CSV",
+        "Data Explorer",
       highlightSubtext:
-        "To quickly explore small datasets, upload a CSV file and use the filters below. This tool is intended for educational purposes only.",
+        "To quickly explore small datasets, upload a CSV or TSV file and use the filters below. This tool is intended for educational purposes only.",
       highlightLink: null,
     },
   ];
