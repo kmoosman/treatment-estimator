@@ -20,8 +20,9 @@ export function createScheduleRateLimit(store) {
         (route[2] && !UUID_PATTERN.test(route[2]))
       )
         return;
-      const expectedMethod = !route[2] || route[3] ? "POST" : "PUT";
-      if (request.method !== expectedMethod) return;
+      const expectedMethods =
+        !route[2] || route[3] ? ["POST"] : ["PUT", "DELETE"];
+      if (!expectedMethods.includes(request.method)) return;
       // Do not create arbitrary limit buckets for nonexistent event identifiers.
       await store.read(route[1]);
       key = `schedule:mutate:${route[1].toLowerCase()}`;

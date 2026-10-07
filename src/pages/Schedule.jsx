@@ -4,6 +4,8 @@ import Header from "../partials/Header";
 import DatePicker from "../partials/schedule/DatePicker";
 import AvailabilityGrid from "../partials/schedule/AvailabilityGrid";
 import EditResponseDialog from "../partials/schedule/EditResponseDialog";
+import DeleteResponseDialog from "../partials/schedule/DeleteResponseDialog";
+import TimeZoneOptions from "../partials/schedule/TimeZoneOptions";
 import MeetingMessage, {
   EmailCopyButton,
 } from "../partials/schedule/MeetingMessage";
@@ -16,9 +18,14 @@ import {
   displayMeeting,
 } from "../utils/schedule.mjs";
 import {
+  detectTimeZone,
+  isValidTimeZone,
+} from "../utils/scheduleTimezones.mjs";
+import {
   createEvent,
   getEvent,
   saveResponse,
+  deleteResponse,
   requestEditAccess,
   readStored,
   writeStored,
@@ -30,6 +37,7 @@ import {
   rememberedIdentities,
   rememberIdentity,
   selectIdentity,
+  forgetIdentity,
 } from "../utils/scheduleApi";
 import "../css/schedule.css";
 
@@ -60,25 +68,7 @@ const timeOptions = Array.from(
       (i % 4) * 15
     ).padStart(2, "0")}`
 );
-function timezones() {
-  const current = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-  const zones =
-    typeof Intl.supportedValuesOf === "function"
-      ? Intl.supportedValuesOf("timeZone")
-      : [
-          "America/New_York",
-          "America/Chicago",
-          "America/Denver",
-          "America/Los_Angeles",
-          "Europe/London",
-          "Europe/Paris",
-          "Asia/Kolkata",
-          "Asia/Tokyo",
-          "Australia/Sydney",
-        ];
-  return [...new Set([current, "UTC", ...zones])];
-}
-const zones = timezones();
+const detectedTimezone = detectTimeZone();
 
 function ErrorMessage({ children }) {
   return children ? (
@@ -95,7 +85,7 @@ function CreateSchedule() {
   const [dates, setDates] = useState([]);
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
-  const [timezone, setTimezone] = useState(zones[0]);
+  const [timezone, setTimezone] = useState(detectedTimezone);
   const [durationChoice, setDurationChoice] = useState("60");
   const [customDuration, setCustomDuration] = useState("");
   const duration = Number(
@@ -352,11 +342,10 @@ function CreateSchedule() {
                 value={timezone}
                 onChange={(e) => setTimezone(e.target.value)}
               >
-                {zones.map((zone) => (
-                  <option key={zone} value={zone}>
-                    {zoneLabel(zone)}
-                  </option>
-                ))}
+                <TimeZoneOptions
+                  selectedZone={timezone}
+                  detectedZone={detectedTimezone}
+                />
               </select>
             </label>
           </div>
@@ -500,6 +489,7 @@ function GroupResults({
   event,
   onEdit,
   onEditPerson,
+  onDeletePerson,
   displayTimezone,
   editingDisabled,
   onAddPerson,
@@ -774,6 +764,16 @@ function GroupResults({
                     <span>{person.name}</span>
                     <Icon name="edit" size={15} />
                   </button>
+                  <button
+                    type="button"
+                    className="schedule-person-delete"
+                    disabled={editingDisabled}
+                    onClick={() => onDeletePerson(person)}
+                    aria-label={`Delete ${person.name}'s entry`}
+                    title={`Delete ${person.name}'s entry`}
+                  >
+                    <Icon name="trash" size={15} />
+                  </button>
                 </li>
               ))}
             </ul>
@@ -836,9 +836,12 @@ function EventSchedule({ id }) {
   const [editingEmail, setEditingEmail] = useState(null);
   const [switching, setSwitching] = useState(false);
   const [editError, setEditError] = useState("");
+  const [deletingParticipant, setDeletingParticipant] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const [displayTimezone, setDisplayTimezone] = useState(() => {
     const saved = readStored("schedule:display-timezone");
-    return zones.includes(saved) ? saved : zones[0];
+    return isValidTimeZone(saved) ? saved : detectedTimezone;
   });
   const visibleDateCount = useMemo(
     () =>
@@ -864,6 +867,7 @@ function EventSchedule({ id }) {
   const nameInput = useRef(null);
   const refreshGeneration = useRef(0);
   const savingRef = useRef(false);
+  const skipDraftClearAfterDeletion = useRef(false);
   const isDirty =
     ((identity || enteredName) &&
       (name !== savedName || email !== savedEmail)) ||
@@ -961,18 +965,23 @@ function EventSchedule({ id }) {
 
   useEffect(() => {
     if (!ready) return;
-    writeStored(
-      `schedule:draft:${id}`,
-      hasUnsavedChanges
-        ? {
-            participantId: identity?.id || null,
-            name,
-            email,
-            slots,
-            enteredName,
-          }
-        : null
-    );
+    if (skipDraftClearAfterDeletion.current) {
+      skipDraftClearAfterDeletion.current = false;
+      // Deletion already cleared its own draft. Another tab may own the rest.
+      if (!hasUnsavedChanges) return;
+    }
+    const draftKey = `schedule:draft:${id}`;
+    if (hasUnsavedChanges) {
+      writeStored(draftKey, {
+        participantId: identity?.id || null,
+        name,
+        email,
+        slots,
+        enteredName,
+      });
+    } else if (readStored(draftKey)?.participantId === (identity?.id || null)) {
+      writeStored(draftKey, null);
+    }
   }, [id, ready, name, email, slots, enteredName, identity, hasUnsavedChanges]);
 
   useEffect(() => {
@@ -1165,6 +1174,91 @@ function EventSchedule({ id }) {
     }
   }
 
+  function confirmDeletePerson(person) {
+    if (savingRef.current || switching || deleting) return;
+    if (hasUnsavedChanges && identity?.id !== person.id) {
+      setError("Save the current entry before deleting another person.");
+      setMode("edit");
+      return;
+    }
+    setDeletingParticipant(person);
+    setDeleteError("");
+    setError("");
+  }
+
+  async function deletePerson(typedName) {
+    if (savingRef.current || switching || deleting || !deletingParticipant)
+      return;
+    if (hasUnsavedChanges && identity?.id !== deletingParticipant.id) {
+      setDeleteError("Save the current entry before deleting another person.");
+      return;
+    }
+    const participantId = deletingParticipant.id;
+    const deletesCurrentEntry = identity?.id === participantId;
+    savingRef.current = true;
+    refreshGeneration.current += 1;
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      let deleteIdentity =
+        (deletesCurrentEntry ? identity : null) ||
+        managedIdentities.find((item) => item.id === participantId) ||
+        rememberedIdentities(id).find((item) => item.id === participantId);
+      if (!deleteIdentity) {
+        const access = await requestEditAccess(id, participantId, typedName);
+        deleteIdentity = {
+          id: access.participant.id,
+          editToken: access.editToken,
+        };
+      }
+      await deleteResponse(id, participantId, typedName, deleteIdentity);
+      let storageCleared = forgetIdentity(id, participantId);
+      const draft = readStored(`schedule:draft:${id}`);
+      if (draft?.participantId === participantId) {
+        storageCleared =
+          writeStored(`schedule:draft:${id}`, null) && storageCleared;
+      }
+      setManagedIdentities((current) =>
+        current.filter((item) => item.id !== participantId)
+      );
+      setEvent((current) => ({
+        ...current,
+        participants: current.participants.filter(
+          (person) => person.id !== participantId
+        ),
+      }));
+      if (deletesCurrentEntry) {
+        skipDraftClearAfterDeletion.current = true;
+        setIdentity(null);
+        setName("");
+        setEmail("");
+        setSavedName("");
+        setSavedEmail("");
+        setSlots([]);
+        setSavedSlots([]);
+        setEnteredName(false);
+      }
+      setDeletingParticipant(null);
+      setError("");
+      setRefreshError("");
+      setSuccess(
+        `${deletingParticipant.name}’s entry was deleted.${
+          storageCleared
+            ? ""
+            : " Some saved browser details could not be cleared."
+        }`
+      );
+      requestAnimationFrame(() =>
+        document.getElementById("group-tab")?.focus()
+      );
+    } catch (err) {
+      setDeleteError(err.message);
+    } finally {
+      savingRef.current = false;
+      setDeleting(false);
+    }
+  }
+
   async function save({ addAnother = false } = {}) {
     if (savingRef.current) return false;
     savingRef.current = true;
@@ -1290,11 +1384,10 @@ function EventSchedule({ id }) {
             writeStored("schedule:display-timezone", e.target.value);
           }}
         >
-          {zones.map((zone) => (
-            <option key={zone} value={zone}>
-              {zoneLabel(zone)}
-            </option>
-          ))}
+          <TimeZoneOptions
+            selectedZone={displayTimezone}
+            detectedZone={detectedTimezone}
+          />
         </select>
         <span>Defaults to your device’s time zone. Change it anytime.</span>
       </div>
@@ -1565,8 +1658,9 @@ function EventSchedule({ id }) {
           <GroupResults
             event={event}
             displayTimezone={displayTimezone}
-            editingDisabled={saving || switching}
+            editingDisabled={saving || switching || deleting}
             onEditPerson={editPerson}
+            onDeletePerson={confirmDeletePerson}
             onAddPerson={addAnotherPerson}
             hasCurrentEntry={Boolean(identity || enteredName)}
             hasUnsavedChanges={hasUnsavedChanges}
@@ -1587,6 +1681,15 @@ function EventSchedule({ id }) {
             setEditingParticipant(null);
             setEditingEmail(null);
           }
+        }}
+      />
+      <DeleteResponseDialog
+        participant={deletingParticipant}
+        busy={deleting}
+        error={deleteError}
+        onConfirm={deletePerson}
+        onClose={() => {
+          if (!deleting) setDeletingParticipant(null);
         }}
       />
     </>

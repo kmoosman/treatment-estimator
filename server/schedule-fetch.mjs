@@ -72,7 +72,8 @@ export function createScheduleFetchHandler({
     if (origin && origins.has(origin)) {
       headers["Access-Control-Allow-Origin"] = origin;
       headers["Access-Control-Allow-Headers"] = "authorization, content-type";
-      headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, OPTIONS";
+      headers["Access-Control-Allow-Methods"] =
+        "GET, POST, PUT, DELETE, OPTIONS";
       headers["Access-Control-Max-Age"] = "3600";
     }
     const respond = (status, body) =>

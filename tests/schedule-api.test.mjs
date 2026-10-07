@@ -151,6 +151,166 @@ test("only a participant's edit token can update their response, including clear
   assert.equal(shared.body.participants[1].name, "Alex");
 });
 
+test("participant deletion refuses missing confirmation, mismatched names, and invalid tokens without changing data", async (t) => {
+  const { request, directory } = await fixture(t);
+  const event = await createEvent(request);
+  const participantsPath = `/events/${event.id}/participants`;
+  const added = await request(participantsPath, {
+    method: "POST",
+    body: {
+      name: "Katie Coleman",
+      email: "katie@example.org",
+      slots: ["2026-10-07@09:00"],
+    },
+  });
+  const other = await request(participantsPath, {
+    method: "POST",
+    body: { name: "Alex", slots: [] },
+  });
+  const path = `${participantsPath}/${added.body.participant.id}`;
+  const eventFile = join(directory, `${event.id}.json`);
+  const original = JSON.parse(await readFile(eventFile, "utf8"));
+  for (const token of [undefined, "wrong-token", other.body.editToken]) {
+    const denied = await request(path, {
+      method: "DELETE",
+      token,
+      body: { name: "Katie Coleman", confirmed: true },
+    });
+    assert.equal(denied.status, 403);
+    assert.equal(denied.body.deletedParticipantId, undefined);
+  }
+  for (const body of [
+    { name: "Katie Coleman" },
+    ...[false, null, "true", 1].map((confirmed) => ({
+      name: "Katie Coleman",
+      confirmed,
+    })),
+    { confirmed: true },
+    { name: " ", confirmed: true },
+  ]) {
+    const denied = await request(path, {
+      method: "DELETE",
+      token: added.body.editToken,
+      body,
+    });
+    assert.equal(denied.status, 400);
+  }
+  const wrongName = await request(path, {
+    method: "DELETE",
+    token: added.body.editToken,
+    body: { name: "Alex", confirmed: true },
+  });
+  assert.equal(wrongName.status, 403);
+  const missingBody = await request(path, {
+    method: "DELETE",
+    token: added.body.editToken,
+  });
+  assert.equal(missingBody.status, 400);
+  assert.deepEqual(JSON.parse(await readFile(eventFile, "utf8")), original);
+
+  await request(path, {
+    method: "PUT",
+    token: added.body.editToken,
+    body: { name: "Katie C", slots: [] },
+  });
+  const staleName = await request(path, {
+    method: "DELETE",
+    token: added.body.editToken,
+    body: { name: "Katie Coleman", confirmed: true },
+  });
+  assert.equal(staleName.status, 403);
+  const remaining = await request(`/events/${event.id}`);
+  assert.equal(remaining.body.participants.length, 2);
+  assert.equal(remaining.body.participants[0].name, "Katie C");
+});
+
+test("confirmed deletion persists across instances, preserves others, and invalidates all deleted participant access", async (t) => {
+  const { request, directory } = await fixture(t);
+  const event = await createEvent(request);
+  const participantsPath = `/events/${event.id}/participants`;
+  const added = await request(participantsPath, {
+    method: "POST",
+    body: {
+      name: "Katie Coleman",
+      email: "katie@example.org",
+      slots: ["2026-10-07@09:00"],
+    },
+  });
+  const other = await request(participantsPath, {
+    method: "POST",
+    body: {
+      name: "Alex",
+      email: "alex@example.org",
+      slots: ["2026-10-08@10:00"],
+    },
+  });
+  const path = `${participantsPath}/${added.body.participant.id}`;
+  const access = await request(`${path}/edit-access`, {
+    method: "POST",
+    body: { name: "Katie Coleman" },
+  });
+  const eventFile = join(directory, `${event.id}.json`);
+  const before = JSON.parse(await readFile(eventFile, "utf8"));
+  const deleted = await request(path, {
+    method: "DELETE",
+    token: access.body.editToken,
+    body: { name: "  KATIE   COLEMAN  ", confirmed: true },
+  });
+  assert.equal(deleted.status, 200);
+  assert.deepEqual(deleted.body, {
+    deletedParticipantId: added.body.participant.id,
+  });
+  const secondInstance = await startServer(t, directory);
+  const shared = await secondInstance(`/events/${event.id}`);
+  assert.deepEqual(shared.body.participants, [other.body.participant]);
+  assert.deepEqual(JSON.parse(await readFile(eventFile, "utf8")), {
+    ...before,
+    participants: before.participants.filter(
+      (person) => person.id !== added.body.participant.id
+    ),
+  });
+  for (const token of [added.body.editToken, access.body.editToken]) {
+    assert.equal(
+      (
+        await secondInstance(path, {
+          method: "PUT",
+          token,
+          body: { name: "Katie Coleman", slots: [] },
+        })
+      ).status,
+      404
+    );
+    assert.equal(
+      (
+        await secondInstance(path, {
+          method: "DELETE",
+          token,
+          body: { name: "Katie Coleman", confirmed: true },
+        })
+      ).status,
+      404
+    );
+  }
+  assert.equal(
+    (
+      await secondInstance(`${path}/edit-access`, {
+        method: "POST",
+        body: { name: "Katie Coleman" },
+      })
+    ).status,
+    404
+  );
+  const otherUpdate = await secondInstance(
+    `${participantsPath}/${other.body.participant.id}`,
+    {
+      method: "PUT",
+      token: other.body.editToken,
+      body: { name: "Alex", slots: [] },
+    }
+  );
+  assert.equal(otherUpdate.status, 200);
+});
+
 test("a courtesy name match opens editing on another device without invalidating existing devices", async (t) => {
   const { request, directory } = await fixture(t);
   const event = await createEvent(request);

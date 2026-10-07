@@ -1,0 +1,45 @@
+.schedule-delete-dialog-icon {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+.schedule-delete-dialog-confirmation {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 20px;
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.7;
+  cursor: pointer;
+}
+.schedule-delete-dialog-confirmation input {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+  border: 1px solid #94a3b8;
+  border-radius: 3px;
+  color: #b91c1c;
+}
+.schedule-delete-dialog-confirmation input:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 3px;
+}
+.schedule-delete-dialog-confirmation input:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.schedule-delete-dialog-confirmation span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.schedule-delete-dialog-submit {
+  border-color: #b91c1c;
+  background: #b91c1c;
+  color: #fff;
+}
+.schedule-delete-dialog-submit:hover:not(:disabled) {
+  border-color: #991b1b;
+  background: #991b1b;
+}

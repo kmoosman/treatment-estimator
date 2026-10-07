@@ -51,7 +51,8 @@ test("unrelated routes, invalid identifiers, reads, and unsupported methods do n
     ["GET", `/events/${EVENT_A}`],
     ["POST", `/events/${EVENT_A}`],
     ["GET", `/events/${EVENT_A}/participants`],
-    ["DELETE", `/events/${EVENT_A}/participants/${PERSON}`],
+    ["DELETE", `/events/${EVENT_A}/participants`],
+    ["DELETE", `/events/${EVENT_A}/participants/${PERSON}/edit-access`],
     ["POST", `/events/${EVENT_A}/participants/${PERSON}`],
     ["PUT", `/events/${EVENT_A}/participants/${PERSON}/edit-access`],
     ["POST", "/events/not-a-uuid/participants"],
@@ -80,11 +81,12 @@ test("nonexistent events return 404 before arbitrary budget buckets can be creat
   assert.equal(counts.size, 0);
 });
 
-test("add, update, and courtesy recovery share one canonical per-event budget while other events stay independent", async () => {
+test("add, update, delete, and courtesy recovery share one canonical per-event budget while other events stay independent", async () => {
   const { calls, counts, run } = fixture();
   await run("POST", `/events/${EVENT_A.toUpperCase()}/participants`);
   await run("PUT", `/events/${EVENT_A}/participants/${PERSON}`);
   await run("POST", `/events/${EVENT_A}/participants/${PERSON}/edit-access`);
+  await run("DELETE", `/events/${EVENT_A}/participants/${PERSON}`);
   await run("POST", `/events/${EVENT_B}/participants`);
   assert.deepEqual(
     calls.filter(([operation]) => operation === "consume"),
@@ -92,10 +94,11 @@ test("add, update, and courtesy recovery share one canonical per-event budget wh
       ["consume", `schedule:mutate:${EVENT_A}`, 1000, 3600],
       ["consume", `schedule:mutate:${EVENT_A}`, 1000, 3600],
       ["consume", `schedule:mutate:${EVENT_A}`, 1000, 3600],
+      ["consume", `schedule:mutate:${EVENT_A}`, 1000, 3600],
       ["consume", `schedule:mutate:${EVENT_B}`, 1000, 3600],
     ]
   );
-  assert.equal(counts.get(`schedule:mutate:${EVENT_A}`), 3);
+  assert.equal(counts.get(`schedule:mutate:${EVENT_A}`), 4);
   assert.equal(counts.get(`schedule:mutate:${EVENT_B}`), 1);
   for (let index = 0; index < calls.length; index += 2) {
     assert.equal(
@@ -110,7 +113,7 @@ test("add, update, and courtesy recovery share one canonical per-event budget wh
 test("exhaustion returns actionable 429 errors and one event cannot exhaust another event's saves", async () => {
   const { counts, run } = fixture();
   counts.set(`schedule:mutate:${EVENT_A}`, 999);
-  await run("PUT", `/events/${EVENT_A}/participants/${PERSON}`);
+  await run("DELETE", `/events/${EVENT_A}/participants/${PERSON}`);
   await assert.rejects(
     run("POST", `/events/${EVENT_A}/participants`),
     (error) =>
