@@ -1,0 +1,177 @@
+.schedule-edit-dialog {
+  position: relative;
+  z-index: 60;
+  color: #334155;
+}
+.schedule-edit-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #0f172a66;
+  backdrop-filter: blur(2px);
+}
+.schedule-edit-dialog-positioner {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 24px;
+}
+.schedule-edit-dialog-panel {
+  width: 100%;
+  max-width: 480px;
+  margin: auto;
+  padding: 30px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 20px 70px #0f172a33;
+}
+.schedule-edit-dialog-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 19px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #3b82f6;
+}
+.schedule-edit-dialog-title {
+  margin: 0;
+  color: #1e293b;
+  font-size: 22px;
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+}
+.schedule-edit-dialog-description {
+  margin-top: 10px;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.schedule-edit-dialog-name {
+  display: block;
+  margin-top: 17px;
+  padding: 12px 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #334155;
+  font-size: 15px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.schedule-edit-dialog-label {
+  display: block;
+  margin: 22px 0 8px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+}
+.schedule-edit-dialog-input {
+  display: block;
+  width: 100%;
+  min-height: 43px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: #fff;
+  color: #334155;
+  font-size: 14px;
+}
+.schedule-edit-dialog-input:focus {
+  outline: 2px solid #bfdbfe;
+  outline-offset: 1px;
+  border-color: #3b82f6;
+  --tw-ring-color: transparent;
+}
+.schedule-edit-dialog-courtesy {
+  margin-top: 10px;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.7;
+}
+.schedule-edit-dialog-error {
+  margin-top: 16px;
+  padding: 11px 13px;
+  border: 1px solid #fecaca;
+  border-radius: 5px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.schedule-edit-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 25px;
+}
+.schedule-edit-dialog-button {
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 20px;
+  cursor: pointer;
+}
+.schedule-edit-dialog-cancel {
+  border-color: #cbd5e1;
+  background: #fff;
+  color: #475569;
+}
+.schedule-edit-dialog-cancel:hover:not(:disabled) {
+  background: #f8fafc;
+}
+.schedule-edit-dialog-confirm {
+  border-color: #3b82f6;
+  background: #3b82f6;
+  color: #fff;
+}
+.schedule-edit-dialog-confirm:hover:not(:disabled) {
+  border-color: #2563eb;
+  background: #2563eb;
+}
+.schedule-edit-dialog-button:disabled,
+.schedule-edit-dialog-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.schedule-edit-dialog-button:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 3px;
+}
+.schedule-edit-dialog-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+@media (max-width: 480px) {
+  .schedule-edit-dialog-positioner {
+    padding: 16px;
+  }
+  .schedule-edit-dialog-panel {
+    padding: 24px 20px;
+  }
+  .schedule-edit-dialog-title {
+    font-size: 20px;
+  }
+  .schedule-edit-dialog-actions {
+    flex-direction: column;
+  }
+  .schedule-edit-dialog-button {
+    width: 100%;
+  }
+}

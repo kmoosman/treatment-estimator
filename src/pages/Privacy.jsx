@@ -16,22 +16,34 @@ export const Privacy = () => {
         1. Information We Collect
       </h3>
       <p className="mt-4 max-w-2xl text-md text-gray-500">
-        We do not collect any personal information through the Site.
+        When you use Schedule, we store event details, participant names,
+        optional email addresses, and submitted availability on the scheduling
+        server. Your browser stores recently opened events and private edit
+        tokens that let you update the entries you manage without an account or
+        password. Other tools may store their preferences locally on your
+        device.
       </p>
 
       <h3 className="text-lg leading-6 font-medium text-gray-900 mt-8">
         2. How We Use Your Information
       </h3>
       <p className="mt-4 max-w-2xl text-md text-gray-500">
-        As we do not collect any personal information through the Site, we do
-        not use your information in any way.
+        We use scheduling information to show availability, identify overlapping
+        times, let participants update their responses, and prepare messages and
+        email lists for calendar invitations.
       </p>
 
       <h3 className="text-lg leading-6 font-medium text-gray-900 mt-8">
         3. Information Sharing
       </h3>
       <p className="mt-4 max-w-2xl text-md text-gray-500">
-        We do not share any information with third parties.
+        Anyone with an event link can view that event’s details, participant
+        names, any email addresses they choose to share, and availability. Your
+        private edit tokens are not included in the shared event link or
+        displayed to other participants. Participants can resume on another
+        device by selecting their name and retyping it. This is a courtesy
+        confirmation, so anyone with the event link and the displayed name can
+        also edit that response.
       </p>
 
       <h3 className="text-lg leading-6 font-medium text-gray-900 mt-8">

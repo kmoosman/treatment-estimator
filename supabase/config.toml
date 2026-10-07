@@ -1,0 +1,8 @@
+project_id = "oncologic-schedule"
+
+# Event links identify shared schedules. Participant updates use private opaque
+# edit tokens verified by our handler, rather than Supabase Auth user JWTs.
+# Database tables have no anon/authenticated grants or public RLS policies.
+[functions.schedule-api]
+verify_jwt = false
+entrypoint = "./functions/schedule-api/index.ts"

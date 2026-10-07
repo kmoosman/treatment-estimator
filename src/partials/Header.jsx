@@ -1,25 +1,18 @@
-import React, { useState } from "react";
+import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
 
-function Header({}) {
+function Header() {
   const location = useLocation();
   const { pathname } = location;
-
-  const routes = ["/", "/nomograms", "/trials"];
-
-  const standardRoutes = [
-    "/",
-    "/nomograms",
-    "/trials/",
-    "/nomograms/",
-    "/trials",
-  ];
 
   return (
     <header className="sticky top-0 bg-white border-b border-slate-200 z-30">
       <div className="px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 -mb-px">
-          <div className="flex items-center">
+        <div className="flex items-center justify-between h-16 -mb-px overflow-x-auto">
+          <nav
+            aria-label="Main navigation"
+            className="flex items-center whitespace-nowrap text-sm sm:text-base pr-4"
+          >
             <NavLink
               to="/"
               className={`${
@@ -62,7 +55,17 @@ function Header({}) {
             >
               <div>Visualize</div>
             </NavLink>
-          </div>
+            <NavLink
+              to="/schedule"
+              className={`ml-4 ${
+                pathname.startsWith("/schedule")
+                  ? "text-slate-900"
+                  : "text-slate-500 hover:text-slate-600"
+              }`}
+            >
+              Schedule
+            </NavLink>
+          </nav>
         </div>
       </div>
     </header>

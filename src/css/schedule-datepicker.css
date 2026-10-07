@@ -1,0 +1,182 @@
+.schedule-datepicker {
+  width: 100%;
+  color: #334155;
+  font-family: Inter, sans-serif;
+}
+
+.schedule-datepicker__header {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.schedule-datepicker__instructions {
+  margin: 0 0 18px;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.schedule-datepicker__month {
+  margin: 0;
+  color: #1e293b;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.schedule-datepicker__navigation {
+  display: flex;
+  gap: 4px;
+}
+
+.schedule-datepicker__arrow {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  background: white;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.schedule-datepicker__weekdays,
+.schedule-datepicker__days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.schedule-datepicker__weekdays {
+  margin-bottom: 10px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.schedule-datepicker__day {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: #475569;
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.schedule-datepicker__days--dragging,
+.schedule-datepicker__days--dragging .schedule-datepicker__day {
+  cursor: crosshair;
+}
+
+.schedule-datepicker__day--selected {
+  border-color: #bfdbfe;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.schedule-datepicker__today {
+  position: absolute;
+  bottom: 4px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #3b82f6;
+}
+
+.schedule-datepicker__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.schedule-datepicker__shortcut,
+.schedule-datepicker__clear {
+  min-height: 30px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.schedule-datepicker__shortcut {
+  padding: 4px 8px;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.schedule-datepicker__clear {
+  padding: 4px 0;
+  color: #64748b;
+}
+
+.schedule-datepicker__summary {
+  margin: 12px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.schedule-datepicker button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 3px;
+}
+
+.schedule-datepicker button:disabled {
+  cursor: default;
+}
+
+.schedule-datepicker__day:disabled,
+.schedule-datepicker__day[aria-disabled="true"],
+.schedule-datepicker__arrow:disabled,
+.schedule-datepicker__clear:disabled {
+  color: #cbd5e1;
+}
+
+.schedule-datepicker__arrow:disabled {
+  border-color: #f1f5f9;
+}
+
+@media (hover: hover) {
+  .schedule-datepicker__arrow:hover:not(:disabled),
+  .schedule-datepicker__day:hover:not(:disabled) {
+    background: #f1f5f9;
+  }
+
+  .schedule-datepicker__day--selected:hover:not(:disabled) {
+    background: #bfdbfe;
+  }
+
+  .schedule-datepicker__shortcut:hover:not(:disabled) {
+    background: #dbeafe;
+  }
+
+  .schedule-datepicker__clear:hover:not(:disabled) {
+    color: #2563eb;
+  }
+}

@@ -1,0 +1,182 @@
+.schedule-meeting-message {
+  width: 100%;
+  min-width: 0;
+  margin-top: 13px;
+  padding-top: 13px;
+  border-top: 1px solid #e2e8f0;
+}
+.schedule-message-label {
+  display: block;
+  margin-bottom: 7px;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 600;
+}
+.schedule-message-draft,
+.schedule-message-fallback textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: #fff;
+  color: #475569;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1.7;
+  resize: vertical;
+}
+.schedule-message-draft:focus,
+.schedule-message-fallback textarea:focus {
+  outline: 2px solid #bfdbfe;
+  outline-offset: 1px;
+  border-color: #3b82f6;
+  --tw-ring-color: transparent;
+}
+.schedule-message-copybar {
+  display: flex;
+  align-items: stretch;
+  gap: 5px;
+  margin-top: 9px;
+}
+.schedule-message-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid #dbeafe;
+  border-radius: 5px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 16px;
+  cursor: pointer;
+}
+.schedule-message-copy svg {
+  flex-shrink: 0;
+}
+.schedule-meeting-message .schedule-message-copy {
+  flex: 1;
+}
+.schedule-message-copy:hover:not(:disabled) {
+  background: #dbeafe;
+  border-color: #bfdbfe;
+}
+.schedule-message-copy:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.schedule-message-options {
+  position: relative;
+  flex-shrink: 0;
+  color: #475569;
+}
+.schedule-message-options summary {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 100%;
+  min-height: 30px;
+  padding-bottom: 4px;
+  border: 1px solid #dce3ec;
+  border-radius: 5px;
+  background: #fff;
+  color: #64748b;
+  list-style: none;
+  font-size: 18px;
+  cursor: pointer;
+  user-select: none;
+}
+.schedule-message-options summary::-webkit-details-marker {
+  display: none;
+}
+.schedule-message-options summary:hover,
+.schedule-message-options[open] summary {
+  background: #f1f5f9;
+}
+.schedule-message-copy:focus-visible,
+.schedule-message-options summary:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}
+.schedule-message-options-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 10;
+  width: 205px;
+  padding: 12px;
+  border: 1px solid #dce3ec;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 5px 18px #0f172a12;
+}
+.schedule-message-options-panel label {
+  display: block;
+  color: #475569;
+  font-size: 10px;
+  font-weight: 500;
+}
+.schedule-message-options-panel label + label {
+  margin-top: 11px;
+}
+.schedule-message-options-panel select {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+  padding: 6px 25px 6px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background-color: #fff;
+  color: #475569;
+  font-family: inherit;
+  font-size: 11px;
+}
+.schedule-message-options-panel p,
+.schedule-best-times li .schedule-message-options-panel p {
+  margin: 9px 0 0;
+  color: #94a3b8;
+  font-size: 10px;
+  line-height: 1.6;
+}
+.schedule-message-feedback,
+.schedule-best-times li .schedule-message-feedback {
+  margin: 7px 0 0;
+  color: #2563eb;
+  font-size: 10px;
+  line-height: 1.6;
+  font-weight: 400;
+}
+.schedule-message-fallback {
+  margin-top: 9px;
+}
+.schedule-message-fallback p,
+.schedule-best-times li .schedule-message-fallback p {
+  margin: 0 0 6px;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+.schedule-email-copy {
+  position: relative;
+  min-width: 0;
+}
+.schedule-email-copy > .schedule-message-copybar {
+  margin-top: 0;
+  justify-content: flex-end;
+}
+.schedule-email-copy-button {
+  padding: 7px;
+  background: #fff;
+  color: #64748b;
+  border-color: #dce3ec;
+}
+.schedule-email-copy > .schedule-message-feedback {
+  text-align: right;
+}

@@ -11,6 +11,7 @@ import Trials from "./pages/Trials";
 import Nomograms from "./pages/Nomograms";
 import Privacy from "./pages/Privacy";
 import Visual from "./pages/Visual";
+import Schedule from "./pages/Schedule";
 
 function App() {
   const location = useLocation();
@@ -41,6 +42,8 @@ function App() {
           element={<Visual type="visualizations" />}
         />
         <Route exact path="/privacy" element={<Privacy />} />
+        <Route path="/schedule" element={<Schedule />} />
+        <Route path="/schedule/:eventId" element={<Schedule />} />
       </Routes>
     </>
   );
