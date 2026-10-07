@@ -81,6 +81,18 @@ export const saveResponse = (eventId, response, identity) =>
     }
   );
 
+export const deleteResponse = (eventId, participantId, name, identity) =>
+  request(
+    `/${encodeURIComponent(eventId)}/participants/${encodeURIComponent(
+      participantId
+    )}`,
+    {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${identity.editToken}` },
+      body: JSON.stringify({ name, confirmed: true }),
+    }
+  );
+
 const RECENTS_KEY = "schedule:recent";
 export function readStored(key, fallback = null) {
   try {
@@ -149,6 +161,20 @@ export function selectIdentity(eventId, identityOrNull) {
   if (identityOrNull !== null && !next) return false;
   if (!loadIdentities(eventId).persisted) return false;
   return writeStored(identityKey(eventId), next);
+}
+
+export function forgetIdentity(eventId, participantId) {
+  if (typeof participantId !== "string" || !participantId.trim()) return false;
+  const targetId = participantId.trim();
+  const identities = loadIdentities(eventId).identities;
+  const active = validIdentity(readStored(identityKey(eventId)));
+  // Clear the active pointer first so a later read cannot migrate it back in.
+  if (active?.id === targetId && !writeStored(identityKey(eventId), null))
+    return false;
+  return writeStored(
+    identitiesKey(eventId),
+    identities.filter((identity) => identity.id !== targetId)
+  );
 }
 
 export function recentEvents() {

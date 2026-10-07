@@ -146,3 +146,54 @@ test("invalid deployment configuration fails through the request without making 
   );
   assert.equal(requests.length, 0);
 });
+
+test("deleting a response confirms the name and sends its edit token to the configured participant URL", async (t) => {
+  const remote = await clientWithUrl(
+    "https://project.supabase.co/functions/v1/schedule-api/events/"
+  );
+  const requests = recordRequests(t);
+  for (const current of [client, remote]) {
+    assert.deepEqual(
+      await current.deleteResponse("event /?", "person/a", "Alex", {
+        id: "person/a",
+        editToken: "participant-edit-token",
+      }),
+      { saved: true }
+    );
+  }
+  assert.deepEqual(
+    requests.map(({ url }) => url),
+    [
+      "/api/schedule/events/event%20%2F%3F/participants/person%2Fa",
+      "https://project.supabase.co/functions/v1/schedule-api/events/event%20%2F%3F/participants/person%2Fa",
+    ]
+  );
+  for (const { options } of requests) {
+    assert.equal(options.method, "DELETE");
+    assert.deepEqual(options.headers, {
+      "Content-Type": "application/json",
+      Authorization: "Bearer participant-edit-token",
+    });
+    assert.deepEqual(JSON.parse(options.body), {
+      name: "Alex",
+      confirmed: true,
+    });
+  }
+});
+
+test("delete errors remain actionable to the caller", async (t) => {
+  t.mock.method(globalThis, "fetch", async () => ({
+    ok: false,
+    status: 403,
+    json: async () => ({
+      error: "Open this person's response before deleting it.",
+    }),
+  }));
+  await assert.rejects(
+    client.deleteResponse("event", "person", "Alex", {
+      id: "person",
+      editToken: "invalid-token",
+    }),
+    /Open this person's response before deleting it/
+  );
+});

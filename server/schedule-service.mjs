@@ -275,10 +275,10 @@ export function createScheduleService(store) {
       return { status: 200, body };
     }
     const isCreating = !participantId;
-    if (method !== (isCreating ? "POST" : "PUT"))
+    if (isCreating ? method !== "POST" : !["PUT", "DELETE"].includes(method))
       throw new ApiError(
         405,
-        "Use POST to add availability or PUT to update it."
+        "Use POST to add availability, PUT to update it, or DELETE to remove it."
       );
     const inputBody = await readBody();
     const body = await store.mutate(id, (event) => {
@@ -297,6 +297,22 @@ export function createScheduleService(store) {
             403,
             "This browser does not have permission to edit that response."
           );
+        if (method === "DELETE") {
+          requireValid(
+            inputBody.confirmed === true,
+            "Confirm removal before deleting this response."
+          );
+          const name = cleanText(inputBody.name, "Name", 60);
+          if (normalizedName(name) !== normalizedName(participant.name))
+            throw new ApiError(
+              403,
+              "That name does not match this response. Enter the current name shown for this response."
+            );
+          event.participants = event.participants.filter(
+            (entry) => entry.id !== participant.id
+          );
+          return { deletedParticipantId: participant.id };
+        }
       } else if (event.participants.length >= 100) {
         throw new ApiError(
           409,

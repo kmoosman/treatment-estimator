@@ -8,6 +8,7 @@ import {
   UUID_PATTERN,
 } from "../server/schedule-service.mjs";
 import { ScheduleStoreError } from "../server/supabase-store.mjs";
+import { createScheduleRateLimit } from "../server/schedule-rate-limit.mjs";
 
 const ORIGIN = "https://oncologic.example";
 const EDGE_ORIGIN = "https://project.supabase.co";
@@ -188,6 +189,112 @@ test("Fetch routing supports full Edge and short prefixes, preserving shared ema
   assert.ok(firstStore.calls.length > 0 && secondStore.calls.length > 0);
 });
 
+test("Fetch deletion enforces confirmation and the shared mutation budget, with CORS on errors and success", async () => {
+  const store = memoryStore();
+  const limitCalls = [];
+  let available = true;
+  store.consumeLimit = async (...args) => {
+    limitCalls.push(args);
+    return available;
+  };
+  const request = client(
+    createScheduleFetchHandler({
+      store,
+      allowedOrigins: [ORIGIN],
+      rateLimit: createScheduleRateLimit(store),
+    })
+  );
+  const created = await request("/events", {
+    method: "POST",
+    body: eventInput,
+  });
+  const path = `/events/${created.body.id}`;
+  const added = await request(`${path}/participants`, {
+    method: "POST",
+    body: { name: "Alex", slots: ["2026-10-07@09:00"] },
+  });
+  const other = await request(`${path}/participants`, {
+    method: "POST",
+    body: { name: "Jordan", slots: [] },
+  });
+  const participantPath = `${path}/participants/${added.body.participant.id}`;
+  const before = structuredClone(store.documents.get(created.body.id));
+  available = false;
+  const limited = await request(participantPath, {
+    method: "DELETE",
+    token: added.body.editToken,
+    body: { name: "Alex", confirmed: true },
+  });
+  assert.equal(limited.status, 429);
+  assertCors(limited);
+  assert.deepEqual(store.documents.get(created.body.id), before);
+  available = true;
+  const unconfirmed = await request(participantPath, {
+    method: "DELETE",
+    token: added.body.editToken,
+    body: { name: "Alex", confirmed: false },
+  });
+  assert.equal(unconfirmed.status, 400);
+  assertCors(unconfirmed);
+  assert.deepEqual(store.documents.get(created.body.id), before);
+  const deleted = await request(participantPath, {
+    method: "DELETE",
+    token: added.body.editToken,
+    body: { name: "Alex", confirmed: true },
+  });
+  assert.equal(deleted.status, 200);
+  assert.deepEqual(deleted.body, {
+    deletedParticipantId: added.body.participant.id,
+  });
+  assertCors(deleted);
+  assert.match(deleted.headers.get("access-control-allow-methods"), /DELETE/);
+  assert.deepEqual((await request(path)).body.participants, [
+    other.body.participant,
+  ]);
+  assert.deepEqual(
+    limitCalls.slice(-3),
+    Array.from({ length: 3 }, () => [
+      `schedule:mutate:${created.body.id}`,
+      1000,
+      3600,
+    ])
+  );
+});
+
+test("a retried deletion rechecks the participant's current name before committing", async () => {
+  const store = memoryStore();
+  const request = client(
+    createScheduleFetchHandler({ store, allowedOrigins: [ORIGIN] })
+  );
+  const event = await request("/events", { method: "POST", body: eventInput });
+  const participantsPath = `/events/${event.body.id}/participants`;
+  const added = await request(participantsPath, {
+    method: "POST",
+    body: { name: "Alex", slots: [] },
+  });
+  const mutate = store.mutate.bind(store);
+  store.mutate = async (id, callback) => {
+    callback(structuredClone(store.documents.get(id)));
+    // A competing writer renamed this response before the first CAS succeeded.
+    store.documents.get(id).participants[0].name = "Alex Morgan";
+    return mutate(id, callback);
+  };
+  const deleted = await request(
+    `${participantsPath}/${added.body.participant.id}`,
+    {
+      method: "DELETE",
+      token: added.body.editToken,
+      body: { name: "Alex", confirmed: true },
+    }
+  );
+  assert.equal(deleted.status, 403);
+  assertCors(deleted);
+  const remaining = (await request(`/events/${event.body.id}`)).body
+    .participants;
+  assert.equal(remaining.length, 1);
+  assert.equal(remaining[0].name, "Alex Morgan");
+});
+
 test("OPTIONS handles browser preflight without a body, storage access, or rate-limit work", async () => {
   const store = memoryStore();
   let rateCalls = 0;
@@ -205,7 +312,7 @@ test("OPTIONS handles browser preflight without a body, storage access, or rate-
         method: "OPTIONS",
         headers: {
           Origin: ORIGIN,
-          "Access-Control-Request-Method": "PUT",
+          "Access-Control-Request-Method": "DELETE",
           "Access-Control-Request-Headers": "authorization, content-type",
         },
       }
@@ -223,6 +330,7 @@ test("OPTIONS handles browser preflight without a body, storage access, or rate-
     /content-type/i
   );
   assert.match(response.headers.get("access-control-allow-methods"), /PUT/);
+  assert.match(response.headers.get("access-control-allow-methods"), /DELETE/);
   assert.deepEqual(store.calls, []);
   assert.equal(rateCalls, 0);
 });
