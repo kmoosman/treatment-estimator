@@ -1,5 +1,24 @@
 const LOCAL_API_ROOT = "/api/schedule/events";
 const CONFIGURED_API_URL = import.meta.env?.VITE_SCHEDULE_API_URL;
+const CONFIGURED_REGION = import.meta.env?.VITE_SCHEDULE_FUNCTION_REGION;
+// https://supabase.com/docs/guides/functions/regional-invocation
+const FUNCTION_REGIONS = new Set([
+  "ap-northeast-1",
+  "ap-northeast-2",
+  "ap-south-1",
+  "ap-southeast-1",
+  "ap-southeast-2",
+  "ca-central-1",
+  "us-east-1",
+  "us-west-1",
+  "us-west-2",
+  "eu-central-1",
+  "eu-central-2",
+  "eu-west-1",
+  "eu-west-2",
+  "eu-west-3",
+  "sa-east-1",
+]);
 
 export function resolveScheduleApiRoot(configuredUrl) {
   if (configuredUrl == null || configuredUrl === "") return LOCAL_API_ROOT;
@@ -25,14 +44,36 @@ export function resolveScheduleApiRoot(configuredUrl) {
   return url.href.replace(/\/+$/, "");
 }
 
+function requestUrl(apiRoot, path) {
+  const target = `${apiRoot}${path}`;
+  if (apiRoot === LOCAL_API_ROOT) return target;
+  const url = new URL(target);
+  if (!/^\/functions\/v1\/[^/]+(?:\/|$)/.test(new URL(apiRoot).pathname))
+    return target;
+  if (CONFIGURED_REGION == null) return target;
+  if (typeof CONFIGURED_REGION !== "string")
+    throw new Error(
+      "VITE_SCHEDULE_FUNCTION_REGION must be a supported Supabase region or blank."
+    );
+  const region = CONFIGURED_REGION.trim();
+  if (!region) return target;
+  if (!FUNCTION_REGIONS.has(region))
+    throw new Error(
+      "VITE_SCHEDULE_FUNCTION_REGION must be a supported Supabase region or blank."
+    );
+  url.searchParams.set("forceFunctionRegion", region);
+  return url.href;
+}
+
 async function request(path = "", options = {}) {
   const apiRoot = resolveScheduleApiRoot(CONFIGURED_API_URL);
+  const url = requestUrl(apiRoot, path);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
   let response;
   let data;
   try {
-    response = await fetch(`${apiRoot}${path}`, {
+    response = await fetch(url, {
       ...options,
       signal: controller.signal,
       headers: { "Content-Type": "application/json", ...options.headers },
