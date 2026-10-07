@@ -28,11 +28,11 @@ project reference **`skjooqzogckjlchtayvj`**. Setup status as of October 6, 2026
   were preserved.
 - The production build passed and contains the exact cloud API URL. The checked
   bundle contains no `sb_secret_` key prefix.
-- No public frontend deployment has been performed.
+- The public frontend is deployed at `https://calculator.medtechstack.com/schedule`
+  through AWS Amplify from `kmoosman/treatment-estimator` branch `main`.
 
-The frontend URL below is active for local development; it has not been deployed
-to the public frontend. The database password belongs in a private Supabase or
-CLI prompt, never in the app.
+The frontend URL below is active in local development and production. The database
+password belongs in a private Supabase or CLI prompt, never in the app.
 
 ## How requests and storage work
 
@@ -205,12 +205,27 @@ the same value in that frontend's build environment and rebuild.
 
 ```dotenv
 VITE_SCHEDULE_API_URL=https://skjooqzogckjlchtayvj.supabase.co/functions/v1/schedule-api/events
+VITE_SCHEDULE_FUNCTION_REGION=us-east-1
 ```
 
 The URL includes `/events` at the end and is compiled into the browser bundle.
 HTTPS is required remotely; HTTP is accepted
 only for `localhost`, `127.0.0.1`, and `[::1]` development. Do not include keys,
 query parameters, fragments, or credentials in the URL.
+
+`VITE_SCHEDULE_FUNCTION_REGION` optionally adds Supabase's documented
+`forceFunctionRegion` query parameter to each function request. On October 6,
+default routing through `us-east-2` repeatedly returned storage `503` responses
+after 10 seconds, while parallel requests for the same event through `us-east-1`
+and `us-west-2` returned `200` in under a second. Use `us-east-1` for this deployment
+to avoid that failing regional path. This changes execution routing only; it does
+not move the database or change permissions. Local Node API requests are unaffected.
+
+This override is a mitigation, not a diagnosis of Supabase's underlying failure.
+Explicit regional routing disables Supabase's automatic region selection. If that
+region becomes unhealthy, verify another region and rebuild with its value, or
+clear this setting after automatic routing has recovered. See
+[Supabase regional invocations](https://supabase.com/docs/guides/functions/regional-invocation).
 
 For local testing, copy [.env.example](../.env.example) to `.env.local`, set the URL,
 and restart `npm run dev`. For deployment, set the variable in the chosen frontend

@@ -91,11 +91,12 @@ provide `SUPABASE_SECRET_KEY` there as a server-only credential.
 #### Supabase deployment
 
 The app also supports a static frontend backed by the `schedule-api` Supabase Edge
-Function and a private-access Postgres table. Set only the full public events URL
-in the frontend build environment:
+Function and a private-access Postgres table. Set the public events URL and
+optional execution region in the frontend build environment:
 
 ```dotenv
 VITE_SCHEDULE_API_URL=https://skjooqzogckjlchtayvj.supabase.co/functions/v1/schedule-api/events
+VITE_SCHEDULE_FUNCTION_REGION=us-east-1
 ```
 
 No Supabase API key is needed in the browser. Privileged database credentials stay
@@ -118,7 +119,8 @@ The gateway's legacy JWT check was disabled with approval, and a missing-event
 request now reaches the application handler and returns `404`. The local app uses
 Supabase through `.env.local`; 24 live API checks and cross-browser persistence
 verification passed. The production build also passed. CLI migration-history
-reconciliation remains pending. No public frontend deployment has occurred.
+reconciliation remains pending. The public frontend is deployed through AWS
+Amplify at `https://calculator.medtechstack.com/schedule`.
 
 API endpoints below use the local Node prefix. With Supabase, replace
 `/api/schedule/events` with the configured full events URL; payloads and edit-token
