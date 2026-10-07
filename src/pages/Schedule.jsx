@@ -5,6 +5,7 @@ import DatePicker from "../partials/schedule/DatePicker";
 import AvailabilityGrid from "../partials/schedule/AvailabilityGrid";
 import EditResponseDialog from "../partials/schedule/EditResponseDialog";
 import DeleteResponseDialog from "../partials/schedule/DeleteResponseDialog";
+import TimeZoneOptions from "../partials/schedule/TimeZoneOptions";
 import MeetingMessage, {
   EmailCopyButton,
 } from "../partials/schedule/MeetingMessage";
@@ -16,6 +17,10 @@ import {
   displaySlot,
   displayMeeting,
 } from "../utils/schedule.mjs";
+import {
+  detectTimeZone,
+  isValidTimeZone,
+} from "../utils/scheduleTimezones.mjs";
 import {
   createEvent,
   getEvent,
@@ -63,25 +68,7 @@ const timeOptions = Array.from(
       (i % 4) * 15
     ).padStart(2, "0")}`
 );
-function timezones() {
-  const current = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-  const zones =
-    typeof Intl.supportedValuesOf === "function"
-      ? Intl.supportedValuesOf("timeZone")
-      : [
-          "America/New_York",
-          "America/Chicago",
-          "America/Denver",
-          "America/Los_Angeles",
-          "Europe/London",
-          "Europe/Paris",
-          "Asia/Kolkata",
-          "Asia/Tokyo",
-          "Australia/Sydney",
-        ];
-  return [...new Set([current, "UTC", ...zones])];
-}
-const zones = timezones();
+const detectedTimezone = detectTimeZone();
 
 function ErrorMessage({ children }) {
   return children ? (
@@ -98,7 +85,7 @@ function CreateSchedule() {
   const [dates, setDates] = useState([]);
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
-  const [timezone, setTimezone] = useState(zones[0]);
+  const [timezone, setTimezone] = useState(detectedTimezone);
   const [durationChoice, setDurationChoice] = useState("60");
   const [customDuration, setCustomDuration] = useState("");
   const duration = Number(
@@ -355,11 +342,10 @@ function CreateSchedule() {
                 value={timezone}
                 onChange={(e) => setTimezone(e.target.value)}
               >
-                {zones.map((zone) => (
-                  <option key={zone} value={zone}>
-                    {zoneLabel(zone)}
-                  </option>
-                ))}
+                <TimeZoneOptions
+                  selectedZone={timezone}
+                  detectedZone={detectedTimezone}
+                />
               </select>
             </label>
           </div>
@@ -855,7 +841,7 @@ function EventSchedule({ id }) {
   const [deleteError, setDeleteError] = useState("");
   const [displayTimezone, setDisplayTimezone] = useState(() => {
     const saved = readStored("schedule:display-timezone");
-    return zones.includes(saved) ? saved : zones[0];
+    return isValidTimeZone(saved) ? saved : detectedTimezone;
   });
   const visibleDateCount = useMemo(
     () =>
@@ -1398,11 +1384,10 @@ function EventSchedule({ id }) {
             writeStored("schedule:display-timezone", e.target.value);
           }}
         >
-          {zones.map((zone) => (
-            <option key={zone} value={zone}>
-              {zoneLabel(zone)}
-            </option>
-          ))}
+          <TimeZoneOptions
+            selectedZone={displayTimezone}
+            detectedZone={detectedTimezone}
+          />
         </select>
         <span>Defaults to your device’s time zone. Change it anytime.</span>
       </div>
