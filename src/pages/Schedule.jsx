@@ -508,6 +508,7 @@ function GroupResults({
 }) {
   const [inspectedSlot, setInspectedSlot] = useState(null);
   const [selectedMeeting, setSelectedMeeting] = useState(null);
+  const [expandedAvailability, setExpandedAvailability] = useState(null);
   const [emailSeparator, setEmailSeparator] = useState("comma");
   const total = event.participants.length;
   const bestTimes = getBestTimes(event).map((time) => ({
@@ -593,11 +594,28 @@ function GroupResults({
                       {time.zoneLabel !== time.endZoneLabel &&
                         ` (${time.zoneLabel} → ${time.endZoneLabel})`}
                     </p>
-                    <span
-                      className={
+                    <button
+                      type="button"
+                      className={`schedule-availability-toggle ${
                         time.count === total
                           ? "schedule-all-available"
                           : "schedule-partial-available"
+                      }`}
+                      aria-expanded={expandedAvailability === time.instant}
+                      aria-controls={`meeting-availability-${time.instant}`}
+                      aria-label={`${
+                        time.count === total
+                          ? `Everyone available · ${total}`
+                          : `${time.count} of ${total} available`
+                      }. ${
+                        expandedAvailability === time.instant ? "Hide" : "Show"
+                      } names available for the full meeting (${durationLabel(
+                        event.duration
+                      )}).`}
+                      onClick={() =>
+                        setExpandedAvailability((current) =>
+                          current === time.instant ? null : time.instant
+                        )
                       }
                     >
                       {time.count === total ? (
@@ -608,7 +626,34 @@ function GroupResults({
                       {time.count === total
                         ? `Everyone available · ${total}`
                         : `${time.count} of ${total} available`}
-                    </span>
+                      <Icon
+                        name={
+                          expandedAvailability === time.instant
+                            ? "close"
+                            : "plus"
+                        }
+                        size={12}
+                      />
+                    </button>
+                    {expandedAvailability === time.instant && (
+                      <div
+                        id={`meeting-availability-${time.instant}`}
+                        className="schedule-meeting-availability"
+                      >
+                        <p>
+                          Available for the full meeting (
+                          {durationLabel(event.duration)}):
+                        </p>
+                        <ul aria-label="People available for the full meeting">
+                          {time.participants.map((person) => (
+                            <li key={person.id}>
+                              <Icon name="check" size={12} />
+                              <span>{person.name}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                     <button
                       className="schedule-choose-time"
                       type="button"

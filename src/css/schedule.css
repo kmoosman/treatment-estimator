@@ -840,7 +840,7 @@ select.schedule-input {
   list-style: none;
   margin-top: 18px;
 }
-.schedule-best-times li {
+.schedule-best-times > ol > li {
   display: flex;
   gap: 10px;
   padding: 14px 0;
@@ -878,6 +878,52 @@ select.schedule-input {
 }
 .schedule-partial-available {
   color: #64748b;
+}
+.schedule-availability-toggle {
+  max-width: 100%;
+  border: 1px solid #dbeafe;
+  border-radius: 4px;
+  background: #f8fafc;
+  padding: 5px 6px;
+  text-align: left;
+  line-height: 1.5;
+}
+.schedule-availability-toggle:hover,
+.schedule-availability-toggle[aria-expanded="true"] {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  color: #2563eb;
+}
+.schedule-availability-toggle svg {
+  flex-shrink: 0;
+}
+.schedule-meeting-availability {
+  margin-top: 8px;
+  border-left: 2px solid #bfdbfe;
+  padding-left: 9px;
+}
+.schedule-meeting-availability ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.schedule-meeting-availability li {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 3px 0;
+  color: #475569;
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.schedule-meeting-availability li svg {
+  flex-shrink: 0;
+  color: #2563eb;
+  margin-top: 2px;
+}
+.schedule-meeting-availability li span {
+  min-width: 0;
 }
 .schedule-empty {
   display: flex;
@@ -1359,10 +1405,10 @@ select.schedule-input {
   line-height: 1.7;
   margin-top: 8px;
 }
-.schedule-best-times li {
+.schedule-best-times > ol > li {
   flex-wrap: wrap;
 }
-.schedule-best-times li > div {
+.schedule-best-times > ol > li > div {
   min-width: 0;
   flex: 1;
 }
@@ -1389,7 +1435,7 @@ select.schedule-input {
   border-color: #93c5fd;
   background: #eff6ff;
 }
-.schedule-best-times li > .schedule-message-expand {
+.schedule-best-times > ol > li > .schedule-message-expand {
   flex: 0 0 100%;
   min-width: 0;
 }
